@@ -10,3 +10,10 @@ a {
   color: inherit;
 }
 
+/* Footer links are <a>/<button> here (the prototype used block <div>s), so make them
+   stack into columns exactly as the original did. */
+.f-link {
+  display: block;
+  width: fit-content;
+}
+
