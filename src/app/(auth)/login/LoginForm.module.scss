@@ -1,0 +1,105 @@
+/* Login styled with the prototype's palette/fonts (vars from prototype.css). */
+.wrap {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  background: var(--cream);
+  padding: 24px;
+}
+
+.card {
+  width: 100%;
+  max-width: 360px;
+  background: var(--white);
+  border: 1px solid var(--cream3);
+  border-radius: 6px;
+  padding: 36px 32px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+}
+
+.brand {
+  font-family: "Cormorant Garamond", serif;
+  font-size: 28px;
+  font-weight: 400;
+  color: var(--ink);
+  line-height: 1;
+}
+
+.brand em {
+  color: var(--gold);
+  font-style: italic;
+}
+
+.sub {
+  font-size: 9px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink4);
+  margin: 6px 0 28px;
+}
+
+.field {
+  display: block;
+  margin-bottom: 16px;
+}
+
+.label {
+  display: block;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink4);
+  margin-bottom: 6px;
+}
+
+.input {
+  width: 100%;
+  padding: 9px 11px;
+  border: 1px solid var(--cream3);
+  border-radius: 4px;
+  background: var(--white);
+  color: var(--ink);
+  font-family: "Jost", sans-serif;
+  font-size: 13px;
+  outline: none;
+
+  &:focus-visible {
+    border-color: var(--gold);
+  }
+}
+
+.error {
+  color: var(--danger);
+  font-size: 11px;
+  margin-top: 4px;
+}
+
+.formError {
+  background: #fbeeee;
+  border: 1px solid #e0b4b4;
+  color: var(--danger);
+  font-size: 12px;
+  padding: 8px 12px;
+  border-radius: 4px;
+  margin-bottom: 16px;
+}
+
+.button {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 4px;
+  background: var(--ink);
+  color: var(--cream);
+  font-family: "Jost", sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  cursor: pointer;
+  margin-top: 8px;
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}

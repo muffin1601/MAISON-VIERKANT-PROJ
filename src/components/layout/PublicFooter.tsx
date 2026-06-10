@@ -1,0 +1,89 @@
+import Link from "next/link";
+import { CatalogueButton } from "@/components/CatalogueButton";
+
+/** Faithful port of the prototype <footer>. */
+export function PublicFooter() {
+  return (
+    <footer>
+      <div className="footer-inner">
+        <div className="fg-grid">
+          <div>
+            <div className="f-brand-name">
+              Maison Vierkant<em> India</em>
+            </div>
+            <div className="f-brand-sub">Curated by Watcon</div>
+            <p className="f-brand-body">
+              Authorised Representative of Atelier Vierkant, Belgium — handcrafted ceramic planters
+              for India&apos;s most distinguished spaces.
+            </p>
+          </div>
+          <div>
+            <div className="f-col-title">Collection</div>
+            <Link className="f-link" href="/collection?series=2025%20Collection">
+              2025 Collection
+            </Link>
+            <Link className="f-link" href="/collection?series=A%20Series">
+              A Series
+            </Link>
+            <Link className="f-link" href="/collection?series=U%20Series">
+              U Series
+            </Link>
+            <Link className="f-link" href="/collection?series=K%20Series">
+              K Series
+            </Link>
+            <Link className="f-link" href="/collection">
+              All 38 Series
+            </Link>
+          </div>
+          <div>
+            <div className="f-col-title">Company</div>
+            <Link className="f-link" href="/about">
+              About Atelier
+            </Link>
+            <Link className="f-link" href="/projects">
+              Projects
+            </Link>
+            <CatalogueButton
+              className="f-link"
+              style={{
+                background: "none",
+                border: "none",
+                padding: 0,
+                cursor: "pointer",
+                font: "inherit",
+                textAlign: "left",
+              }}
+            >
+              Download Catalogue
+            </CatalogueButton>
+            <Link className="f-link" href="/contact">
+              Contact
+            </Link>
+          </div>
+          <div>
+            <div className="f-col-title">Trade</div>
+            <Link className="f-link" href="/contact">
+              For Architects
+            </Link>
+            <Link className="f-link" href="/contact">
+              For Hospitality
+            </Link>
+            <Link className="f-link" href="/contact">
+              Request Quote
+            </Link>
+            <Link className="f-link" href="/contact">
+              Shipping to India
+            </Link>
+          </div>
+        </div>
+        <div className="f-bottom">
+          <span>
+            © 2026 Maison Vierkant India — Watcon Pvt. Ltd. · 343 Sultanpur, MG Road, New Delhi
+            110030
+          </span>
+          <span>GST: 07XXXXX0000X1Z0</span>
+        </div>
+      </div>
+    </footer>
+  );
+}

@@ -1,0 +1,12 @@
+/* App-level global SCSS. The prototype stylesheet (the visual source of truth) is
+   imported separately in layout.tsx as a plain global CSS side-effect, so its rules
+   are inlined rather than emitted as a passthrough @import. Keep this file for
+   app-only globals that are NOT part of the prototype design. */
+
+/* Links render as <a> via next/link — keep them undecorated and inheriting colour
+   everywhere, matching the prototype's button-driven navigation. */
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
