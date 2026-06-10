@@ -5,6 +5,9 @@ import { verifyPassword } from "@/lib/auth/password";
 import type { RoleKey } from "@/lib/auth/rbac";
 
 export const authOptions: NextAuthOptions = {
+  // Explicit secret so the server (getServerSession) and the edge middleware
+  // (getToken) decode the session cookie identically in production (e.g. Vercel).
+  secret: process.env.NEXTAUTH_SECRET,
   session: { strategy: "jwt", maxAge: 60 * 60 * 8 }, // 8h
   pages: { signIn: "/login" },
   providers: [
