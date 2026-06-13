@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <rect width="64" height="64" rx="12" fill="#1a1814"/>
+  <!-- Square monogram echoing "Vierkant" (Dutch: square) with a clay vessel silhouette -->
+  <rect x="14" y="14" width="36" height="36" rx="3" fill="none" stroke="#c4a55a" stroke-width="1.5"/>
+  <path d="M26 24 h12 a2 2 0 0 1 2 2 v6 a8 8 0 0 1 -8 8 a8 8 0 0 1 -8 -8 v-6 a2 2 0 0 1 2 -2 z"
+        fill="none" stroke="#9a7a3a" stroke-width="2" stroke-linejoin="round"/>
+  <line x1="24" y1="44" x2="40" y2="44" stroke="#c4a55a" stroke-width="2" stroke-linecap="round"/>
+</svg>

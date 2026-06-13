@@ -33,9 +33,24 @@ export interface ProductView {
   desc: string;
   dims: string;
   eurPrice: number;
+  status: string;
+  featured: boolean;
+  seoTitle: string;
+  seoDescription: string;
   imgs: string[];
+  drawings: string[];
+  documents: DocumentView[];
   finishes: string[];
   models: ModelView[];
+}
+export interface DocumentView {
+  url: string;
+  filename: string;
+  kind: string;
+  mimeType: string | null;
+  sizeBytes: number | null;
+  bucket: string | null;
+  storageKey: string | null;
 }
 export interface ProjectView {
   name: string;
@@ -87,7 +102,13 @@ function fallbackProducts(): ProductView[] {
     desc: p.desc ?? "",
     dims: p.dims ?? "",
     eurPrice: p.eurPrice ?? 0,
+    status: "ACTIVE",
+    featured: false,
+    seoTitle: "",
+    seoDescription: "",
     imgs: p.imgs ?? [],
+    drawings: [],
+    documents: [],
     finishes: p.finishes ?? [],
     models: ((PROTO_MODELS as Record<string, ModelView[]>)[p.id] ?? []).map((m) => ({
       code: m.code,
@@ -123,6 +144,7 @@ export async function getProducts(): Promise<ProductView[]> {
       include: {
         category: true,
         images: { orderBy: { sort: "asc" } },
+        documents: { orderBy: { sort: "asc" } },
         variants: true,
         finishes: { include: { finish: true } },
       },
@@ -138,7 +160,21 @@ export async function getProducts(): Promise<ProductView[]> {
       desc: p.description ?? "",
       dims: p.dimsSummary ?? "",
       eurPrice: Number(p.eurPrice),
-      imgs: p.images.map((i) => i.url),
+      status: p.status,
+      featured: p.featured,
+      seoTitle: p.seoTitle ?? "",
+      seoDescription: p.seoDescription ?? "",
+      imgs: p.images.filter((i) => i.type !== "DRAWING").map((i) => i.url),
+      drawings: p.images.filter((i) => i.type === "DRAWING").map((i) => i.url),
+      documents: p.documents.map((doc) => ({
+        url: doc.url,
+        filename: doc.filename,
+        kind: doc.kind,
+        mimeType: doc.mimeType,
+        sizeBytes: doc.sizeBytes,
+        bucket: doc.bucket,
+        storageKey: doc.storageKey,
+      })),
       finishes: p.finishes.map((f) => f.finish.name),
       models: p.variants.map((v) => ({ code: v.code, eur: Number(v.eurPrice), dims: v.dims ?? "" })),
     }));

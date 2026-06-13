@@ -72,11 +72,15 @@ model Product {
   description String?
   dimsSummary String?
   eurPrice    Decimal             @db.Decimal(10, 2)
-  status      String              @default("ACTIVE")
+  status      String              @default("ACTIVE") // ACTIVE | DRAFT | ARCHIVED
+  featured    Boolean             @default(false)
+  seoTitle    String?
+  seoDescription String?
   categoryId  String?
   category    Category?           @relation(fields: [categoryId], references: [id])
   variants    ProductVariant[]
   images      ProductImage[]
+  documents   ProductDocument[]
   finishes    ProductFinish[]
   collections ProductCollection[]
   inventory   Inventory?
@@ -116,6 +120,24 @@ model ProductImage {
   url       String
   type      String  @default("GALLERY") // HERO | GALLERY | DRAWING
   sort      Int     @default(0)
+}
+
+/** Product attachments stored in Supabase Storage: PDFs, brochures, catalogues, CAD, sheets. */
+model ProductDocument {
+  id         String   @id @default(cuid())
+  productId  String
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  kind       String   @default("DOCUMENT") // DOCUMENT | BROCHURE | CATALOGUE | TECH_SHEET | CAD | DRAWING
+  url        String
+  storageKey String? // object path within the bucket, for deletion
+  bucket     String?
+  filename   String
+  mimeType   String?
+  sizeBytes  Int?
+  sort       Int      @default(0)
+  uploaderId String?
+  createdAt  DateTime @default(now())
+  @@index([productId])
 }
 
 model Finish {
@@ -382,9 +404,13 @@ model PriceOverride {
 
 model UploadedFile {
   id          String          @id @default(cuid())
-  kind        String // PRICE_LIST | PRODUCT_SHEET | MEDIA
+  kind        String // PRICE_LIST | PRODUCT_SHEET | MEDIA | DRAWING | DOCUMENT
   url         String
+  storageKey  String?
+  bucket      String?
   filename    String
+  mimeType    String?
+  sizeBytes   Int?
   parseStatus String          @default("PENDING")
   parsedJson  Json?
   uploaderId  String?

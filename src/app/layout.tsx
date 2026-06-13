@@ -4,16 +4,29 @@ import "@/styles/prototype.css";
 import "./globals.scss";
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXTAUTH_URL || "http://localhost:3000"),
   title: {
     default: "Maison Vierkant India — Curated by Watcon",
     template: "%s · Maison Vierkant India",
   },
   description:
     "Handmade Atelier Vierkant clay vessels for India — planters, bowls, columns and seating across 38 series.",
+  icons: {
+    icon: [{ url: "/favicon.svg", type: "image/svg+xml" }],
+    shortcut: "/favicon.svg",
+    apple: "/favicon.svg",
+  },
   openGraph: {
     title: "Maison Vierkant India",
     description: "Handmade Atelier Vierkant clay vessels, curated for India by Watcon.",
     type: "website",
+    images: [{ url: "/og-image.svg", width: 1200, height: 630, alt: "Maison Vierkant India" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Maison Vierkant India",
+    description: "Handmade Atelier Vierkant clay vessels, curated for India by Watcon.",
+    images: ["/og-image.svg"],
   },
 };
 
@@ -24,6 +37,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/* Exact prototype fonts */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        {/* eslint-disable-next-line @next/next/no-page-custom-font -- prototype-exact font loading, applied site-wide via globals */}
         <link
           href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Jost:wght@200;300;400;500&display=swap"
           rel="stylesheet"

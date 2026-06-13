@@ -5,6 +5,7 @@ import type { ProductView } from "@/services/catalogue/catalogue";
 import { cardPrice } from "@/services/catalogue/catalogue";
 import type { PricingConfig } from "@/services/pricing/PricingService";
 import { ProductEditor } from "./ProductEditor";
+import { Plus } from "@/components/ui/icons";
 
 /** Faithful port of prototype pmRender grid (read view; full editor lands next). */
 export function ProductsView({
@@ -59,10 +60,10 @@ export function ProductsView({
         </select>
         <button
           className="a-btn-g"
-          style={{ width: "auto", padding: "9px 18px", margin: 0 }}
+          style={{ width: "auto", padding: "9px 18px", margin: 0, display: "inline-flex", alignItems: "center", gap: 7 }}
           onClick={() => setCreating(true)}
         >
-          + Add Product
+          <Plus size={14} strokeWidth={1.75} /> Add Product
         </button>
       </div>
 
@@ -120,6 +121,7 @@ export function ProductsView({
       {editorOpen && (
         <ProductEditor
           product={editing}
+          pricing={pricing}
           onClose={() => {
             setEditing(null);
             setCreating(false);

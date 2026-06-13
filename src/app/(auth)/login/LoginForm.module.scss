@@ -1,41 +1,77 @@
-/* Login styled with the prototype's palette/fonts (vars from prototype.css). */
+/* Production login — prototype palette/fonts (vars from prototype.css). */
 .wrap {
   min-height: 100dvh;
-  display: grid;
-  place-items: center;
-  background: var(--cream);
-  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  padding: 32px 20px;
+  background:
+    radial-gradient(1200px 600px at 50% -10%, rgba(154, 122, 58, 0.1), transparent 60%),
+    linear-gradient(180deg, var(--cream) 0%, var(--cream2) 100%);
 }
 
 .card {
   width: 100%;
-  max-width: 360px;
+  max-width: 392px;
   background: var(--white);
   border: 1px solid var(--cream3);
-  border-radius: 6px;
-  padding: 36px 32px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow:
+    0 1px 2px rgba(26, 24, 20, 0.04),
+    0 24px 60px -20px rgba(26, 24, 20, 0.28);
+}
+
+/* ── Ink brand header ── */
+.head {
+  background: var(--ink);
+  padding: 34px 32px 26px;
+  text-align: center;
+  position: relative;
+
+  &::after {
+    content: "";
+    position: absolute;
+    left: 32px;
+    right: 32px;
+    bottom: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(196, 165, 90, 0.5), transparent);
+  }
+}
+
+.mark {
+  display: inline-flex;
+  margin-bottom: 12px;
 }
 
 .brand {
   font-family: "Cormorant Garamond", serif;
-  font-size: 28px;
+  font-size: 30px;
   font-weight: 400;
-  color: var(--ink);
+  color: var(--cream);
   line-height: 1;
-}
+  letter-spacing: 0.01em;
 
-.brand em {
-  color: var(--gold);
-  font-style: italic;
+  em {
+    color: var(--gold2);
+    font-style: italic;
+  }
 }
 
 .sub {
   font-size: 9px;
-  letter-spacing: 0.22em;
+  letter-spacing: 0.26em;
   text-transform: uppercase;
-  color: var(--ink4);
-  margin: 6px 0 28px;
+  color: rgba(248, 245, 240, 0.45);
+  margin-top: 9px;
+}
+
+/* ── Body / form ── */
+.body {
+  padding: 30px 32px 28px;
 }
 
 .field {
@@ -48,30 +84,87 @@
   font-size: 10px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
+  color: var(--ink3);
+  margin-bottom: 7px;
+}
+
+.inputWrap {
+  position: relative;
+  display: block;
+}
+
+.leadIcon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
   color: var(--ink4);
-  margin-bottom: 6px;
+  pointer-events: none;
 }
 
 .input {
   width: 100%;
-  padding: 9px 11px;
+  padding: 11px 12px 11px 36px;
   border: 1px solid var(--cream3);
-  border-radius: 4px;
+  border-radius: 6px;
   background: var(--white);
   color: var(--ink);
   font-family: "Jost", sans-serif;
-  font-size: 13px;
+  font-size: 13.5px;
   outline: none;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+
+  &::placeholder {
+    color: var(--ink4);
+    opacity: 0.7;
+  }
 
   &:focus-visible {
     border-color: var(--gold);
+    box-shadow: 0 0 0 3px rgba(154, 122, 58, 0.12);
+  }
+
+  &[aria-invalid="true"] {
+    border-color: var(--danger);
+  }
+}
+
+.inputPw {
+  padding-right: 42px;
+}
+
+.eye {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: none;
+  background: none;
+  color: var(--ink4);
+  cursor: pointer;
+  border-radius: 5px;
+  transition:
+    color 0.15s,
+    background 0.15s;
+
+  &:hover {
+    color: var(--gold);
+    background: var(--cream2);
   }
 }
 
 .error {
+  display: block;
   color: var(--danger);
   font-size: 11px;
-  margin-top: 4px;
+  margin-top: 5px;
 }
 
 .formError {
@@ -79,27 +172,58 @@
   border: 1px solid #e0b4b4;
   color: var(--danger);
   font-size: 12px;
-  padding: 8px 12px;
-  border-radius: 4px;
-  margin-bottom: 16px;
+  padding: 9px 12px;
+  border-radius: 6px;
+  margin-bottom: 18px;
+  text-align: center;
 }
 
 .button {
   width: 100%;
-  padding: 12px;
+  padding: 13px;
   border: none;
-  border-radius: 4px;
-  background: var(--ink);
-  color: var(--cream);
+  border-radius: 6px;
+  background: var(--gold);
+  color: #fff;
   font-family: "Jost", sans-serif;
-  font-size: 11px;
+  font-size: 11.5px;
+  font-weight: 500;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   cursor: pointer;
-  margin-top: 8px;
+  margin-top: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  transition:
+    background 0.15s,
+    transform 0.05s;
+
+  &:hover:not(:disabled) {
+    background: var(--ink);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(1px);
+  }
 
   &:disabled {
     opacity: 0.6;
     cursor: not-allowed;
   }
+}
+
+.foot {
+  margin-top: 18px;
+  text-align: center;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: var(--ink4);
+}
+
+.copyright {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--ink4);
 }

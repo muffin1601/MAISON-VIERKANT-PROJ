@@ -7,6 +7,7 @@ import { calcINR, type PricingConfig } from "@/services/pricing/PricingService";
 import { fmt } from "@/lib/format";
 import { useCart } from "@/store/cart";
 import { showToast } from "@/lib/toast";
+import { FileText, Download } from "@/components/ui/icons";
 
 /** Faithful port of prototype renderPD/openProd/addToCt — exact markup & behaviour. */
 export function ProductDetail({ p, pricing }: { p: ProductView; pricing: PricingConfig }) {
@@ -192,6 +193,40 @@ export function ProductDetail({ p, pricing }: { p: ProductView; pricing: Pricing
                 confirmed order.
               </p>
             </div>
+
+            {(p.documents.length > 0 || p.drawings.length > 0) && (
+              <div className="pd-downloads" style={{ marginTop: 24, borderTop: "1px solid var(--cream3)", paddingTop: 18 }}>
+                <div className="pd-story-l" style={{ marginBottom: 10 }}>Downloads &amp; Resources</div>
+                <div style={{ display: "grid", gap: 8 }}>
+                  {p.documents.map((doc, i) => (
+                    <a
+                      key={`doc-${i}`}
+                      href={doc.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", background: "var(--cream2)", border: "1px solid var(--cream3)", borderRadius: 4, textDecoration: "none", color: "var(--ink)" }}
+                    >
+                      <FileText size={18} strokeWidth={1.5} style={{ color: "var(--gold)", flexShrink: 0 }} />
+                      <span style={{ flex: 1, fontSize: 13 }}>{doc.filename}</span>
+                      <Download size={16} strokeWidth={1.5} style={{ color: "var(--ink3)" }} />
+                    </a>
+                  ))}
+                  {p.drawings.map((url, i) => (
+                    <a
+                      key={`dwg-${i}`}
+                      href={url}
+                      target="_blank"
+                      rel="noreferrer"
+                      style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", background: "var(--cream2)", border: "1px solid var(--cream3)", borderRadius: 4, textDecoration: "none", color: "var(--ink)" }}
+                    >
+                      <FileText size={18} strokeWidth={1.5} style={{ color: "var(--gold)", flexShrink: 0 }} />
+                      <span style={{ flex: 1, fontSize: 13 }}>Technical drawing {i + 1}</span>
+                      <Download size={16} strokeWidth={1.5} style={{ color: "var(--ink3)" }} />
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

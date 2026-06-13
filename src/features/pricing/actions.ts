@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/session";
+import { recordAudit } from "@/lib/audit";
 import type { PricingConfig } from "@/services/pricing/PricingService";
 
 export interface PriceEntryInput {
@@ -14,7 +15,7 @@ export interface PriceEntryInput {
 export async function applyPriceEntries(
   entries: PriceEntryInput[],
 ): Promise<{ updated: number }> {
-  await requirePermission("pricing.manage");
+  const user = await requirePermission("pricing.manage");
   let updated = 0;
   for (const e of entries) {
     if (!e.code || !(e.eur > 0)) continue;
@@ -31,6 +32,7 @@ export async function applyPriceEntries(
     }
   }
   if (updated) {
+    await recordAudit({ actorId: user.id, action: "pricing.applyEntries", entity: "ProductVariant", after: { updated } });
     revalidatePath("/admin/pricing");
     revalidatePath("/collection");
   }
@@ -39,7 +41,7 @@ export async function applyPriceEntries(
 
 /** Persist the active pricing rule. Updates every INR price across the site. */
 export async function savePricing(config: PricingConfig): Promise<{ ok: boolean }> {
-  await requirePermission("pricing.manage");
+  const user = await requirePermission("pricing.manage");
   const active = await prisma.pricingRule.findFirst({ where: { isActive: true } });
   const data = {
     rate: config.rate,
@@ -56,5 +58,6 @@ export async function savePricing(config: PricingConfig): Promise<{ ok: boolean 
   } else {
     await prisma.pricingRule.create({ data: { name: "Default", isActive: true, ...data } });
   }
+  await recordAudit({ actorId: user.id, action: "pricing.update", entity: "PricingRule", entityId: active?.id ?? null, after: data });
   return { ok: true };
 }

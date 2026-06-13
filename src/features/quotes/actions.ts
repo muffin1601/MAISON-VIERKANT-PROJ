@@ -3,14 +3,17 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/session";
+import { recordAudit } from "@/lib/audit";
 import { quoteSchema, type QuoteInput } from "@/validations/quote";
+
+const QUOTE_STATUSES = ["DRAFT", "SENT", "APPROVED", "REJECTED", "EXPIRED", "CONVERTED"] as const;
 
 function quoteNumber(): string {
   return "MVI-QT-" + Date.now().toString().slice(-6);
 }
 
 export async function saveQuote(input: QuoteInput): Promise<{ id: string; number: string }> {
-  await requirePermission("quotes.write");
+  const user = await requirePermission("quotes.write");
   const d = quoteSchema.parse(input);
 
   const discount = d.discountPct / 100;
@@ -64,13 +67,18 @@ export async function saveQuote(input: QuoteInput): Promise<{ id: string; number
     },
   });
 
+  await recordAudit({ actorId: user.id, action: "quote.create", entity: "Quote", entityId: quote.id, after: { number, total } });
   revalidatePath("/admin/saved-quotes");
   return { id: quote.id, number };
 }
 
 export async function setQuoteStatus(id: string, status: string): Promise<{ ok: boolean }> {
-  await requirePermission("quotes.approve");
+  const user = await requirePermission("quotes.approve");
+  if (!(QUOTE_STATUSES as readonly string[]).includes(status)) {
+    throw new Error(`Invalid quote status: ${status}`);
+  }
   await prisma.quote.update({ where: { id }, data: { status } });
+  await recordAudit({ actorId: user.id, action: "quote.status", entity: "Quote", entityId: id, after: { status } });
   revalidatePath("/admin/saved-quotes");
   return { ok: true };
 }

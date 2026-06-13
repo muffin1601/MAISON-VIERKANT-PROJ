@@ -7,6 +7,7 @@ import { fmt } from "@/lib/format";
 import { showToast } from "@/lib/toast";
 import { useRouter } from "next/navigation";
 import { savePricing, applyPriceEntries } from "./actions";
+import { FileUp } from "@/components/ui/icons";
 
 const SAMPLES: [string, number][] = [
   ["U40", 117],
@@ -31,29 +32,35 @@ export function PricingEngine({
   const [saving, setSaving] = useState(false);
   const [uploadStatus, setUploadStatus] = useState("No file uploaded yet");
 
+  /** Parse a CSV of `code,eur` rows (header optional) and bulk-apply prices. */
   async function onUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    setUploadStatus("Reading PDF & extracting prices…");
+    setUploadStatus("Reading CSV…");
     try {
-      const fd = new FormData();
-      fd.append("file", file);
-      const res = await fetch("/api/admin/extract", { method: "POST", body: fd });
-      const json = await res.json();
-      if (!res.ok) {
-        setUploadStatus("Extraction failed");
-        showToast(json?.error?.message || "Extraction failed");
+      const text = await file.text();
+      const entries: { code: string; eur: number }[] = [];
+      for (const line of text.split(/\r?\n/)) {
+        const cols = line.split(/[,;\t]/).map((s) => s.trim().replace(/^"|"$/g, ""));
+        if (cols.length < 2) continue;
+        const code = cols[0];
+        const eur = parseFloat(cols[1].replace(/[^0-9.]/g, ""));
+        if (!code || code.toLowerCase() === "code" || !(eur > 0)) continue; // skip header/blank
+        entries.push({ code, eur });
+      }
+      if (entries.length === 0) {
+        setUploadStatus("No valid rows found");
+        showToast("CSV must have rows of: code,eur");
         return;
       }
-      const entries = json.data.entries as { code: string; eur: number }[];
-      setUploadStatus(`Extracted ${entries.length} prices — applying…`);
+      setUploadStatus(`Parsed ${entries.length} prices — applying…`);
       const applied = await applyPriceEntries(entries);
       setUploadStatus(`Updated ${applied.updated} of ${entries.length} models from ${file.name}`);
       showToast(`Price list applied — ${applied.updated} models updated.`);
       router.refresh();
     } catch {
       setUploadStatus("Upload failed");
-      showToast("Could not process the PDF.");
+      showToast("Could not read the CSV file.");
     } finally {
       e.target.value = "";
     }
@@ -144,20 +151,21 @@ export function PricingEngine({
       <div className="a-card" style={{ marginBottom: 18, borderLeft: "3px solid var(--gold)" }}>
         <div style={{ display: "flex", alignItems: "flex-start", gap: 20, flexWrap: "wrap" }}>
           <div style={{ flex: 1, minWidth: 220 }}>
-            <div className="a-sec" style={{ marginBottom: 4 }}>
-              📄 Upload Atelier Vierkant EUR Price List
+            <div className="a-sec" style={{ marginBottom: 4, display: "flex", alignItems: "center", gap: 8 }}>
+              <FileUp size={15} strokeWidth={1.5} style={{ color: "var(--gold)" }} /> Bulk Update EUR Prices (CSV)
             </div>
             <div style={{ fontSize: 11, color: "var(--ink4)", lineHeight: 1.7, marginBottom: 12 }}>
-              Upload the official Atelier Vierkant price list PDF. All EUR prices will be extracted
-              and every product price on the website updates automatically.
+              Upload a CSV with one row per model: <code style={{ fontSize: 11 }}>code,eur</code> (e.g.{" "}
+              <code style={{ fontSize: 11 }}>ARON80,2983</code>). Matching products/variants update
+              instantly across the whole site. A header row is optional.
             </div>
             <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
               <label
                 className="a-btn-g"
                 style={{ width: "auto", padding: "9px 18px", margin: 0, cursor: canManage ? "pointer" : "not-allowed" }}
               >
-                Upload Price List PDF
-                <input type="file" accept=".pdf" style={{ display: "none" }} disabled={!canManage} onChange={onUpload} />
+                Upload Price CSV
+                <input type="file" accept=".csv,text/csv" style={{ display: "none" }} disabled={!canManage} onChange={onUpload} />
               </label>
               <div style={{ fontSize: 11, color: "var(--ink4)" }}>{uploadStatus}</div>
             </div>

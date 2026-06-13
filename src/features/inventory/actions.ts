@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/session";
+import { recordAudit } from "@/lib/audit";
 
 /** Adjust stock for a product (verbatim behaviour of prototype adjStock, now persisted). */
 export async function adjustStock(productId: string, delta: number): Promise<number> {
@@ -23,5 +24,13 @@ export async function adjustStock(productId: string, delta: number): Promise<num
       },
     }),
   ]);
+  await recordAudit({
+    actorId: user.id,
+    action: "inventory.adjust",
+    entity: "Inventory",
+    entityId: inv.id,
+    before: { quantity: inv.quantity },
+    after: { quantity: next, delta },
+  });
   return next;
 }
