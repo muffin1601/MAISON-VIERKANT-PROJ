@@ -1,14 +1,12 @@
 import { NextResponse } from "next/server";
 import { requirePermission, AuthError } from "@/lib/auth/session";
 import { recordAudit } from "@/lib/audit";
-import { extractProductFromPdf, ExtractionError } from "@/services/extraction/PdfExtractionService";
+import { productFromText, ExtractionError } from "@/services/extraction/PdfExtractionService";
 import { toFormPatch } from "@/validations/pdfImport";
 
 export const runtime = "nodejs";
-export const maxDuration = 60;
 
-const MAX_PDF_BYTES = 50 * 1024 * 1024; // 50 MB (feature spec)
-const MAX_OCR_PAGES = 12;
+const MAX_TEXT_CHARS = 200_000; // generous cap; text is extracted client-side
 
 /** Map an extraction failure code to an HTTP status + safe message. */
 function statusFor(code: ExtractionError["code"]): { status: number; message: string } {
@@ -16,8 +14,7 @@ function statusFor(code: ExtractionError["code"]): { status: number; message: st
     case "NO_TEXT":
       return {
         status: 422,
-        message:
-          "Could not read this PDF. It may be empty, corrupted, or a scanned image we couldn't OCR.",
+        message: "Could not read text from this PDF. It may be empty, corrupted, or image-only.",
       };
     case "NO_DATA":
       return {
@@ -30,10 +27,9 @@ function statusFor(code: ExtractionError["code"]): { status: number; message: st
 }
 
 /**
- * Authenticated PDF → product extraction. Accepts multipart form:
- *   - `file`  : the product PDF (required, ≤ 50 MB, application/pdf)
- *   - `pages` : 0..N rendered page images (PNG/JPEG) used only for OCR fallback
- * Returns the structured product and a ready-to-apply form patch.
+ * Authenticated product extraction. Accepts JSON `{ text }` — the PDF's text layer (plus any
+ * client-side OCR) already extracted in the browser. Returns the structured product and a
+ * ready-to-apply form patch. The PDF itself is never uploaded here (see client image/doc flow).
  */
 export async function POST(req: Request) {
   let user;
@@ -44,49 +40,25 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: { message: "Not authorized" } }, { status });
   }
 
-  let form: FormData;
+  let body: { text?: unknown };
   try {
-    form = await req.formData();
+    body = await req.json();
   } catch {
-    return NextResponse.json({ error: { message: "Invalid form submission" } }, { status: 400 });
+    return NextResponse.json({ error: { message: "Invalid request body" } }, { status: 400 });
   }
 
-  const file = form.get("file");
-  if (!(file instanceof File)) {
-    return NextResponse.json({ error: { message: "No PDF uploaded" } }, { status: 400 });
-  }
-  if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
-    return NextResponse.json({ error: { message: "File must be a PDF" } }, { status: 415 });
-  }
-  if (file.size === 0) {
-    return NextResponse.json({ error: { message: "PDF is empty" } }, { status: 400 });
-  }
-  if (file.size > MAX_PDF_BYTES) {
-    return NextResponse.json({ error: { message: "PDF exceeds the 50 MB limit" } }, { status: 413 });
-  }
-
-  const pdfBuffer = Buffer.from(await file.arrayBuffer());
-
-  // Optional OCR page rasters (only consumed if embedded text is thin).
-  const pageEntries = form.getAll("pages").filter((p): p is File => p instanceof File);
-  const ocrImages: Buffer[] = [];
-  for (const p of pageEntries.slice(0, MAX_OCR_PAGES)) {
-    if (p.type.startsWith("image/") && p.size > 0) {
-      ocrImages.push(Buffer.from(await p.arrayBuffer()));
-    }
-  }
+  const text = typeof body.text === "string" ? body.text.slice(0, MAX_TEXT_CHARS) : "";
 
   try {
-    const product = await extractProductFromPdf({ pdfBuffer, ocrImages });
+    const product = productFromText(text);
     const patch = toFormPatch(product);
 
-    // Best-effort audit; never block the response on it.
     void recordAudit({
       actorId: user.id,
       action: "product.import_pdf",
       entity: "Product",
       entityId: null,
-      after: { filename: file.name, size: file.size, name: patch.name },
+      after: { name: patch.name, models: patch.models.length },
     }).catch(() => {});
 
     return NextResponse.json({ data: { product, patch } });

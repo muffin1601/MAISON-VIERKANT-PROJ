@@ -273,8 +273,8 @@ export function ProductEditor({
             {/* AI import — populate the form from a product PDF */}
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap", background: "var(--cream2)", border: "1px solid var(--cream3)", borderRadius: 4, padding: "10px 14px" }}>
               <div style={{ fontSize: 11, color: "var(--ink4)", lineHeight: 1.6 }}>
-                Have a catalogue page or spec sheet? Auto-fill name, description, dimensions, variants,
-                finishes, SEO and images.
+                Have a catalogue page or spec sheet with clear, selectable text? Auto-fill name,
+                series, description, dimensions, models and finishes — and pick product images.
               </div>
               <button
                 type="button"

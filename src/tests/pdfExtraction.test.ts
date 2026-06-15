@@ -1,20 +1,5 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
-
-// Mock pdf-parse (native pdfjs under the hood) so the service is unit-testable offline.
-const { parseMock } = vi.hoisted(() => ({ parseMock: vi.fn() }));
-
-vi.mock("pdf-parse", () => ({
-  PDFParse: class {
-    getText() {
-      return parseMock();
-    }
-    async destroy() {}
-  },
-}));
-
-import { extractProductFromPdf, ExtractionError } from "@/services/extraction/PdfExtractionService";
-
-const pdf = Buffer.from("%PDF-1.4 fake");
+import { describe, it, expect } from "vitest";
+import { productFromText, ExtractionError } from "@/services/extraction/PdfExtractionService";
 
 const SHEET = `ARON
 Collection: U Series
@@ -24,17 +9,13 @@ Width: 40 cm
 Height: 80 cm
 Depth: 40 cm
 Weight: 12 kg
-A sculptural hand-thrown clay vessel for interior styling.
 
 AU80  h=80cm  € 1.299,00
 AU60  h=60cm  € 748`;
 
-describe("extractProductFromPdf (free/deterministic)", () => {
-  beforeEach(() => vi.clearAllMocks());
-
-  it("parses embedded PDF text into a structured product", async () => {
-    parseMock.mockResolvedValueOnce({ text: SHEET });
-    const product = await extractProductFromPdf({ pdfBuffer: pdf });
+describe("productFromText (free/deterministic, parses client-extracted text)", () => {
+  it("parses extracted text into a structured product", () => {
+    const product = productFromText(SHEET);
     expect(product.name).toBe("ARON");
     expect(product.series).toBe("U Series");
     expect(product.material).toBe("Clay");
@@ -43,21 +24,22 @@ describe("extractProductFromPdf (free/deterministic)", () => {
     expect(product.variants?.find((v) => v.code === "AU80")?.eur).toBe(1299);
   });
 
-  it("throws NO_TEXT for an unreadable PDF with no OCR images", async () => {
-    parseMock.mockResolvedValueOnce({ text: "" });
-    await expect(extractProductFromPdf({ pdfBuffer: pdf })).rejects.toMatchObject({
-      name: "ExtractionError",
-      code: "NO_TEXT",
-    });
+  it("throws NO_TEXT when there is no usable text", () => {
+    expect(() => productFromText("")).toThrowError(ExtractionError);
+    try {
+      productFromText("  \n  ");
+    } catch (e) {
+      expect((e as ExtractionError).code).toBe("NO_TEXT");
+    }
   });
 
-  it("throws NO_DATA when text is present but holds no product fields", async () => {
-    parseMock.mockResolvedValueOnce({ text: "—— ==== //// ____ ++++ #### @@@@ %%%% &&&& **** ()() <><> ;;;; :::: |||| ~~~~ ^^^^ ???? !!!!" });
-    await expect(extractProductFromPdf({ pdfBuffer: pdf })).rejects.toMatchObject({ code: "NO_DATA" });
-  });
-
-  it("recovers (returns '') when pdf-parse throws on a corrupt PDF, then reports NO_TEXT", async () => {
-    parseMock.mockRejectedValueOnce(new Error("bad xref"));
-    await expect(extractProductFromPdf({ pdfBuffer: pdf })).rejects.toBeInstanceOf(ExtractionError);
+  it("throws NO_DATA when text is present but holds no product fields", () => {
+    try {
+      productFromText("—— ==== //// ____ ++++ #### @@@@ %%%% &&&& **** ()() <><> ;;;; :::: |||| ~~~~");
+      throw new Error("should have thrown");
+    } catch (e) {
+      expect(e).toBeInstanceOf(ExtractionError);
+      expect((e as ExtractionError).code).toBe("NO_DATA");
+    }
   });
 });

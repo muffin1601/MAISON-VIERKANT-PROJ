@@ -3,7 +3,7 @@
 import { useCallback, useRef, useState } from "react";
 import { showToast } from "@/lib/toast";
 import { useUpload } from "@/lib/upload/useUpload";
-import { renderPdfPages, type RenderedPage } from "@/lib/pdf/renderPdfPages";
+import { extractPdf, ocrPages, type RenderedPage } from "@/lib/pdf/renderPdfPages";
 import type { ImportFormPatch } from "@/validations/pdfImport";
 import { X, FileUp, CloudUpload, Check, ArrowRight, RefreshCw } from "@/components/ui/icons";
 
@@ -15,11 +15,11 @@ type Stage = "pick" | "rendering" | "extracting" | "review" | "applying" | "done
 
 const STAGE_LABEL: Record<Stage, string> = {
   pick: "",
-  rendering: "Extracting Images…",
-  extracting: "Extracting Text & Reading Specifications…",
-  review: "Review extracted data",
-  applying: "Filling Product Form…",
-  done: "Completed",
+  rendering: "Reading pictures from your PDF…",
+  extracting: "Reading the product details…",
+  review: "Please check the details below",
+  applying: "Filling in the form…",
+  done: "All done!",
   error: "",
 };
 
@@ -78,36 +78,49 @@ export function PdfImport({ hasExistingData, onApply, onClose }: Props) {
         return;
       }
       if (file.size === 0 || file.size > MAX_PDF_BYTES) {
-        setErrorMsg(file.size === 0 ? "That PDF is empty." : "PDF exceeds the 50 MB limit.");
+        setErrorMsg(file.size === 0 ? "That PDF appears to be empty." : "That PDF is too big (the maximum is 50 MB).");
         setStage("error");
         return;
       }
       setSourceFile(file);
 
-      // 1 · Render pages client-side (images + OCR source). Non-fatal if it fails.
+      // 1 · Extract text + render page images, entirely in the browser. Non-fatal if it fails.
       setStage("rendering");
       setProgress(0);
       let rendered: RenderedPage[] = [];
+      let text = "";
       try {
-        rendered = await renderPdfPages(file, {
+        const extract = await extractPdf(file, {
           onProgress: (done, total) => setProgress(Math.round((done / Math.max(1, total)) * 100)),
         });
+        rendered = extract.pages;
+        text = extract.text;
       } catch (err) {
-        rendered = []; // corrupt/locked PDF — let the server try text extraction anyway
-        console.warn("PDF page render failed:", err);
+        rendered = [];
+        text = "";
+        console.warn("PDF processing failed:", err);
       }
       setPages(rendered);
       setRenderFailed(rendered.length === 0);
-      setSelected(new Set(rendered.map((p) => p.page)));
+      // Select all by index (a page can yield several embedded images).
+      setSelected(new Set(rendered.map((_, i) => i)));
 
-      // 2 · Extract + structure on the server.
+      // 2 · OCR fallback (client-side) when the PDF has no usable text layer (scanned pages).
       setStage("extracting");
-      try {
-        const body = new FormData();
-        body.append("file", file, file.name);
-        for (const p of rendered) body.append("pages", p.file, p.file.name);
+      if (text.trim().length < 40 && rendered.length) {
+        const ocr = await ocrPages(rendered, {
+          onProgress: (done, total) => setProgress(Math.round((done / Math.max(1, total)) * 100)),
+        });
+        if (ocr) text = [text, ocr].filter(Boolean).join("\n");
+      }
 
-        const res = await fetch("/api/admin/products/import-pdf", { method: "POST", body });
+      // 3 · Parse the (small) extracted text on the server — the PDF itself is never uploaded here.
+      try {
+        const res = await fetch("/api/admin/products/import-pdf", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text }),
+        });
         const json = await res.json().catch(() => ({}));
         if (!res.ok) {
           setErrorMsg(json?.error?.message ?? "Could not extract data from this PDF.");
@@ -124,7 +137,7 @@ export function PdfImport({ hasExistingData, onApply, onClose }: Props) {
         setPatch(incoming);
         setStage("review");
       } catch {
-        setErrorMsg("Network error while extracting. Please try again.");
+        setErrorMsg("Something went wrong while reading the PDF. Please try again.");
         setStage("error");
       }
     },
@@ -136,11 +149,11 @@ export function PdfImport({ hasExistingData, onApply, onClose }: Props) {
     if (f) void analyze(f);
   }
 
-  function toggle(page: number) {
+  function toggle(index: number) {
     setSelected((s) => {
       const next = new Set(s);
-      if (next.has(page)) next.delete(page);
-      else next.add(page);
+      if (next.has(index)) next.delete(index);
+      else next.add(index);
       return next;
     });
   }
@@ -150,8 +163,8 @@ export function PdfImport({ hasExistingData, onApply, onClose }: Props) {
     setStage("applying");
     setProgress(0);
 
-    // 3 · Upload the admin-selected page rasters through the existing image pipeline.
-    const chosen = pages.filter((p) => selected.has(p.page));
+    // 3 · Upload the admin-selected images through the existing image pipeline.
+    const chosen = pages.filter((_, i) => selected.has(i));
     const urls: string[] = [];
     for (let i = 0; i < chosen.length; i++) {
       const asset = await upload(chosen[i].file, "product-image");
@@ -178,7 +191,7 @@ export function PdfImport({ hasExistingData, onApply, onClose }: Props) {
 
     onApply(patch, urls, docs, mode);
     setStage("done");
-    showToast("Form populated from PDF.");
+    showToast("The form has been filled in from your PDF.");
     setTimeout(onClose, 700);
   }
 
@@ -235,17 +248,60 @@ export function PdfImport({ hasExistingData, onApply, onClose }: Props) {
               >
                 <CloudUpload size={34} strokeWidth={1.2} style={{ color: "var(--gold)", marginBottom: 10 }} />
                 <div style={{ fontSize: 14, color: "var(--ink)", marginBottom: 4 }}>
-                  Drag &amp; drop a product PDF, or click to browse
+                  Drop your product PDF here, or click to choose a file
                 </div>
                 <div style={{ fontSize: 11, color: "var(--ink4)" }}>
-                  Catalogue page or spec sheet · up to 50 MB · multi-page supported
+                  One product per file · PDF up to 50 MB
                 </div>
                 <input ref={fileRef} type="file" accept="application/pdf,.pdf" hidden onChange={(e) => { onPick(e.target.files); e.target.value = ""; }} />
               </div>
-              <p style={{ fontSize: 11, color: "var(--ink4)", lineHeight: 1.7, margin: 0 }}>
-                We&apos;ll extract images, text, dimensions, variants, finishes and SEO fields, then let you
-                review everything before it fills the form. Nothing is saved until you click Save in the editor.
-              </p>
+
+              {/* What happens — simple, non-technical */}
+              <div style={{ background: "var(--cream2)", border: "1px solid var(--cream3)", borderRadius: 4, padding: "12px 14px" }}>
+                <div style={{ fontSize: 10, letterSpacing: ".12em", textTransform: "uppercase", color: "var(--gold)", marginBottom: 8, fontWeight: 600 }}>
+                  How it works
+                </div>
+                <ol style={{ margin: 0, paddingLeft: 18, display: "grid", gap: 5, fontSize: 11.5, color: "var(--ink3)", lineHeight: 1.6 }}>
+                  <li>Choose your product PDF above.</li>
+                  <li>We read the product details and pictures from it automatically.</li>
+                  <li>The product form gets filled in for you.</li>
+                  <li>You check everything, fix anything if needed, then press <strong>Save</strong>.</li>
+                </ol>
+                <div style={{ fontSize: 11, color: "var(--ink4)", marginTop: 8 }}>
+                  Don&apos;t worry — nothing is saved until you press Save, so you can always cancel.
+                </div>
+              </div>
+
+              {/* Tips in plain language */}
+              <div style={{ background: "var(--cream2)", border: "1px solid var(--cream3)", borderRadius: 4, padding: "12px 14px" }}>
+                <div style={{ fontSize: 10, letterSpacing: ".12em", textTransform: "uppercase", color: "var(--gold)", marginBottom: 8, fontWeight: 600 }}>
+                  Tips for the best result
+                </div>
+                <ul style={{ margin: 0, paddingLeft: 16, display: "grid", gap: 7, fontSize: 11.5, color: "var(--ink3)", lineHeight: 1.6 }}>
+                  <li>
+                    <strong>Use a PDF where you can select the text.</strong> Open the PDF and try to highlight
+                    a few words with your mouse. If you can highlight them, it will work well. If it&apos;s just
+                    a photo or scan of a page, it still works but may be slower and less accurate.
+                  </li>
+                  <li>
+                    <strong>One product per file.</strong> Upload a single product&apos;s sheet or one page at a
+                    time. A page with many products mixed together can confuse the details.
+                  </li>
+                  <li>
+                    <strong>The clearer the details, the more boxes we can fill.</strong> PDFs that list things
+                    plainly — like <em>Name</em>, <em>Size</em>, <em>Material</em>, <em>Colours</em> and
+                    <em> Price</em> — fill in the most fields for you.
+                  </li>
+                  <li>
+                    <strong>Show the product photo clearly</strong> and large on the page. We&apos;ll pull the
+                    photos out so you can choose the main picture.
+                  </li>
+                  <li>
+                    <strong>File size:</strong> any PDF up to 50&nbsp;MB works. If you also want to keep a copy of
+                    the PDF on the product, keep that file under about 4&nbsp;MB.
+                  </li>
+                </ul>
+              </div>
             </>
           )}
 
@@ -256,7 +312,7 @@ export function PdfImport({ hasExistingData, onApply, onClose }: Props) {
               <div style={{ fontSize: 13, color: "var(--ink)", marginTop: 14, marginBottom: 12 }}>{STAGE_LABEL[stage]}</div>
               <Bar value={stage === "extracting" ? undefined : progress} />
               {stage === "extracting" && (
-                <div style={{ fontSize: 10, color: "var(--ink4)", marginTop: 10 }}>Parsing the document — this can take a moment for scanned PDFs (OCR).</div>
+                <div style={{ fontSize: 10, color: "var(--ink4)", marginTop: 10 }}>This can take a little longer for scanned PDFs. Please wait…</div>
               )}
               <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
             </div>
@@ -276,7 +332,7 @@ export function PdfImport({ hasExistingData, onApply, onClose }: Props) {
           {stage === "review" && patch && (
             <>
               <div style={{ fontSize: 12, color: "var(--gold)", fontWeight: 600, letterSpacing: ".04em", display: "flex", alignItems: "center", gap: 6 }}>
-                <Check size={15} strokeWidth={2} /> Extracted — review before applying
+                <Check size={15} strokeWidth={2} /> Here&apos;s what we found — please check it
               </div>
 
               {/* Extracted fields summary */}
@@ -288,19 +344,24 @@ export function PdfImport({ hasExistingData, onApply, onClose }: Props) {
                 <Field label="Models" value={patch.models.map((m) => [m.code, m.dims, m.eur ? `€${m.eur}` : ""].filter(Boolean).join(" · ")).join("  |  ")} />
               </div>
 
-              {/* Page images */}
+              {/* Images — embedded product photos (preferred) + full-page fallbacks */}
               {pages.length > 0 && (
                 <div>
                   <div style={{ fontSize: 11, color: "var(--ink4)", marginBottom: 6 }}>
-                    Images to import ({selected.size}/{pages.length} selected) — click to toggle
+                    Choose which pictures to use ({selected.size} of {pages.length} chosen). Tap a picture to
+                    add or remove it. The first one becomes the main photo.
                   </div>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                    {pages.map((p) => {
-                      const on = selected.has(p.page);
+                    {pages.map((p, i) => {
+                      const on = selected.has(i);
+                      const isPhoto = p.kind === "embedded";
                       return (
-                        <button key={p.page} onClick={() => toggle(p.page)} style={{ position: "relative", width: 84, height: 110, borderRadius: 4, overflow: "hidden", border: `2px solid ${on ? "var(--gold)" : "var(--cream3)"}`, padding: 0, cursor: "pointer", background: "var(--cream2)" }} aria-pressed={on}>
+                        <button key={`${p.page}-${p.kind}-${i}`} onClick={() => toggle(i)} style={{ position: "relative", width: 84, height: 110, borderRadius: 4, overflow: "hidden", border: `2px solid ${on ? "var(--gold)" : "var(--cream3)"}`, padding: 0, cursor: "pointer", background: "var(--cream2)" }} aria-pressed={on}>
                           {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={p.dataUrl} alt={`Page ${p.page}`} style={{ width: "100%", height: "100%", objectFit: "cover", opacity: on ? 1 : 0.45 }} />
+                          <img src={p.dataUrl} alt={isPhoto ? `Photo from page ${p.page}` : `Page ${p.page}`} style={{ width: "100%", height: "100%", objectFit: "cover", opacity: on ? 1 : 0.45 }} />
+                          <span style={{ position: "absolute", bottom: 3, left: 3, fontSize: 8, letterSpacing: ".06em", textTransform: "uppercase", padding: "1px 5px", borderRadius: 2, color: "#fff", background: isPhoto ? "rgba(46,125,50,.92)" : "rgba(26,24,20,.78)" }}>
+                            {isPhoto ? "Photo" : `Page ${p.page}`}
+                          </span>
                           {on && (
                             <span style={{ position: "absolute", top: 3, right: 3, width: 18, height: 18, borderRadius: 3, background: "var(--gold)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center" }}>
                               <Check size={12} strokeWidth={3} />
@@ -315,14 +376,14 @@ export function PdfImport({ hasExistingData, onApply, onClose }: Props) {
 
               {renderFailed && (
                 <div style={{ fontSize: 11, color: "var(--ink4)", background: "var(--cream2)", border: "1px solid var(--cream3)", borderRadius: 4, padding: "8px 10px" }}>
-                  No page images could be rendered from this PDF — add product photos manually after applying.
+                  We couldn&apos;t find any pictures in this PDF — you can add product photos yourself after.
                 </div>
               )}
 
               {/* Attach the source PDF as a product document */}
               <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 11, color: "var(--ink3)", cursor: "pointer" }}>
                 <input type="checkbox" checked={attachPdf} onChange={(e) => setAttachPdf(e.target.checked)} />
-                Attach the source PDF to this product&apos;s documents
+Also keep a copy of this PDF on the product (under Documents)
               </label>
 
               {/* Apply actions */}
@@ -349,7 +410,7 @@ export function PdfImport({ hasExistingData, onApply, onClose }: Props) {
           {stage === "done" && (
             <div style={{ textAlign: "center", padding: "26px 8px" }}>
               <Check size={30} strokeWidth={2} style={{ color: "var(--gold)" }} />
-              <div style={{ fontSize: 13, color: "var(--ink)", marginTop: 10 }}>Completed — form populated.</div>
+              <div style={{ fontSize: 13, color: "var(--ink)", marginTop: 10 }}>All done! The form has been filled in.</div>
             </div>
           )}
         </div>
