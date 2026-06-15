@@ -381,6 +381,7 @@ model PricingRule {
   transportPct  Decimal         @default(18) @db.Decimal(5, 2)
   packingFlat   Decimal         @default(1500) @db.Decimal(10, 2)
   dutyPct       Decimal         @default(25) @db.Decimal(5, 2)
+  swsPct        Decimal         @default(0) @db.Decimal(5, 2) // Social Welfare Surcharge (% of duty)
   gstPct        Decimal         @default(18) @db.Decimal(5, 2)
   profitPct     Decimal         @default(25) @db.Decimal(5, 2)
   dealerMarkupPct Decimal       @default(0) @db.Decimal(5, 2)

@@ -49,6 +49,7 @@ export async function savePricing(config: PricingConfig): Promise<{ ok: boolean 
     transportPct: config.transportPct,
     packingFlat: config.packingFlat,
     dutyPct: config.dutyPct,
+    swsPct: config.swsPct ?? 0,
     gstPct: config.gstPct,
     profitPct: config.profitPct,
     dealerMarkupPct: config.dealerMarkupPct ?? 0,

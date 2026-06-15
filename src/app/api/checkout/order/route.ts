@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { getActivePricing } from "@/services/catalogue/catalogue";
+import { calcBreakdown } from "@/services/pricing/PricingService";
 
 const orderSchema = z.object({
   number: z.string().min(1),
@@ -41,9 +43,25 @@ export async function POST(req: Request) {
   if (!parsed.success) {
     return NextResponse.json({ error: { message: "Validation failed" } }, { status: 422 });
   }
-  const { number, total, customer, items } = parsed.data;
+  const { number, customer, items } = parsed.data;
 
   try {
+    // Prices are ALWAYS recomputed server-side from the active rule + stored EUR — never trust
+    // the client-sent total. Each line snapshots its EUR, computed INR, and the full rule used.
+    const pricing = await getActivePricing();
+    // JSON-safe rule snapshot (no `undefined`, which Prisma's Json input rejects).
+    const ruleSnapshot = {
+      rate: pricing.rate,
+      discountPct: pricing.discountPct,
+      transportPct: pricing.transportPct,
+      packingFlat: pricing.packingFlat,
+      dutyPct: pricing.dutyPct,
+      swsPct: pricing.swsPct ?? 0,
+      gstPct: pricing.gstPct,
+      profitPct: pricing.profitPct,
+      dealerMarkupPct: pricing.dealerMarkupPct ?? 0,
+    };
+
     const cust = await prisma.customer.create({
       data: {
         name: customer.name,
@@ -78,26 +96,39 @@ export async function POST(req: Request) {
         if (!p) return null;
         const variant = p.variants.find((v) => v.code === i.code);
         const eur = Number(variant?.eurPrice ?? p.eurPrice);
+        const bd = calcBreakdown(eur, pricing);
         return {
           productId: p.id,
           variantId: variant?.id ?? null,
           finish: i.finish,
           qty: i.qty,
           eurAtOrder: eur,
-          unitPriceInr: 0,
-          pricingSnapshot: { code: i.code },
+          unitPriceInr: bd.selling, // GST-inclusive unit price, locked at order time
+          pricingSnapshot: {
+            code: i.code,
+            rule: ruleSnapshot,
+            unitSelling: bd.selling,
+            unitExGst: Math.round(bd.sellingExGst),
+            unitGst: Math.round(bd.outputGst),
+          },
         };
       })
       .filter((x): x is NonNullable<typeof x> => x !== null);
+
+    // Server-computed totals (GST-inclusive selling = subtotal ex-GST + GST).
+    const totalInr = orderItems.reduce((sum, it) => sum + it.unitPriceInr * it.qty, 0);
+    const gstInr = orderItems.reduce((sum, it) => sum + it.pricingSnapshot.unitGst * it.qty, 0);
+    const subtotalInr = totalInr - gstInr;
 
     const order = await prisma.order.create({
       data: {
         number,
         customerId: cust.id,
         status: "PENDING",
-        subtotalInr: total,
-        totalInr: total,
-        advanceInr: Math.round(total * 0.5),
+        subtotalInr,
+        gstInr,
+        totalInr,
+        advanceInr: Math.round(totalInr * 0.5),
         items: { create: orderItems },
       },
     });

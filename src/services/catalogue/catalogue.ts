@@ -129,6 +129,7 @@ export async function getActivePricing(): Promise<PricingConfig> {
       transportPct: Number(rule.transportPct),
       packingFlat: Number(rule.packingFlat),
       dutyPct: Number(rule.dutyPct),
+      swsPct: Number(rule.swsPct),
       gstPct: Number(rule.gstPct),
       profitPct: Number(rule.profitPct),
       dealerMarkupPct: Number(rule.dealerMarkupPct),
@@ -212,8 +213,11 @@ export async function getProjects(): Promise<ProjectView[]> {
 /** Card price string, identical to prototype mkCard: "From ₹x" when multiple sizes. */
 export function cardPrice(p: ProductView, pricing: PricingConfig): string {
   const prices = p.models.filter((m) => m.eur > 0).map((m) => calcINR(m.eur, pricing));
-  const min = prices.length ? Math.min(...prices) : calcINR(p.eurPrice, pricing);
-  return prices.length > 1
+  const base = p.eurPrice > 0 ? [calcINR(p.eurPrice, pricing)] : [];
+  const all = prices.length ? prices : base;
+  if (all.length === 0) return "Price on request"; // no EUR price set yet
+  const min = Math.min(...all);
+  return all.length > 1
     ? `From ₹${min.toLocaleString("en-IN")}`
     : `₹${min.toLocaleString("en-IN")}`;
 }

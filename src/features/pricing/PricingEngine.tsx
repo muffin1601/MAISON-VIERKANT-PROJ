@@ -117,7 +117,7 @@ export function PricingEngine({
   }
 
   function exportCsv() {
-    const header = "Series,Model,Dimensions,EUR,INR Base,After Duty+GST,Selling Price (INR)\n";
+    const header = "Series,Model,Dimensions,EUR,Landed Cost,Selling (excl GST),Output GST,Selling Price (incl GST)\n";
     const body = rows
       .map((r) =>
         [
@@ -125,8 +125,9 @@ export function PricingEngine({
           r.model,
           `"${r.dims}"`,
           r.eur || "",
-          r.bd ? Math.round(r.bd.inrBase) : "",
-          r.bd ? Math.round(r.bd.withGst) : "",
+          r.bd ? Math.round(r.bd.landed) : "",
+          r.bd ? Math.round(r.bd.sellingExGst) : "",
+          r.bd ? Math.round(r.bd.outputGst) : "",
           r.bd ? r.bd.selling : "On Request",
         ].join(","),
       )
@@ -181,15 +182,16 @@ export function PricingEngine({
           onChange={(v) => set("rate", v)}
           hint="Update daily — check RBI / XE.com"
         />
-        <Param label="Dealer Discount" value={c.discountPct} unit="%" onChange={(v) => set("discountPct", v)} hint="Applied to EUR price before all other steps" />
-        <Param label="Transport & Insurance" value={c.transportPct} unit="%" onChange={(v) => set("transportPct", v)} hint="Sea freight + insurance as % of INR value" />
-        <Param label="Packing Charges" value={c.packingFlat} symbol="₹" onChange={(v) => set("packingFlat", v)} hint="Fixed per piece, regardless of size" />
-        <Param label="Custom Duty" value={c.dutyPct} unit="%" onChange={(v) => set("dutyPct", v)} hint="Ceramic import duty — verify with CHA" />
-        <Param label="GST" value={c.gstPct} unit="%" onChange={(v) => set("gstPct", v)} hint="Applied after duty on landed cost" />
-        <Param label="Your Profit Margin" value={c.profitPct} unit="%" highlight onChange={(v) => set("profitPct", v)} hint="Applied last — on cost incl. GST" />
+        <Param label="Supplier Discount" value={c.discountPct} unit="%" onChange={(v) => set("discountPct", v)} hint="Trade discount on the EUR price (reduces your cost)" />
+        <Param label="Transport & Insurance" value={c.transportPct} unit="%" onChange={(v) => set("transportPct", v)} hint="Freight + insurance → gives the CIF / assessable value" />
+        <Param label="Custom Duty" value={c.dutyPct} unit="%" onChange={(v) => set("dutyPct", v)} hint="Charged on CIF — verify HS code with your CHA" />
+        <Param label="Social Welfare Surcharge" value={c.swsPct ?? 0} unit="%" onChange={(v) => set("swsPct", v)} hint="% of customs duty (commonly 10%). Set 0 if not applicable" />
+        <Param label="Packing & Handling" value={c.packingFlat} symbol="₹" onChange={(v) => set("packingFlat", v)} hint="Fixed charge added to landed cost (after duty — not duty/GST-marked)" />
+        <Param label="Your Profit Margin" value={c.profitPct} unit="%" highlight onChange={(v) => set("profitPct", v)} hint="Applied on landed cost (before GST)" />
+        <Param label="Output GST" value={c.gstPct} unit="%" onChange={(v) => set("gstPct", v)} hint="Charged to the customer — applied LAST on the selling price" />
 
         <div className="pe-card pe-formula-card">
-          <div className="pe-card-label">7-Step Formula</div>
+          <div className="pe-card-label">Pricing Steps (landed cost → margin → GST)</div>
           <div className="pe-formula-steps" id="pe-formula-steps">
             <span className="step">EUR €1000</span>
             {c.discountPct > 0 && (
@@ -203,17 +205,21 @@ export function PricingEngine({
             <span className="arrow">→</span>
             <span className="step">×₹{c.rate} = {fmt(s.inrBase)}</span>
             <span className="arrow">→</span>
-            <span className="step">+{c.transportPct}% freight = {fmt(s.withTransport)}</span>
+            <span className="step">+{c.transportPct}% freight → CIF {fmt(s.cif)}</span>
             <span className="arrow">→</span>
-            <span className="step">+₹{c.packingFlat} packing = {fmt(s.withPacking)}</span>
+            <span className="step">+{c.dutyPct}% duty{(c.swsPct ?? 0) > 0 ? ` +${c.swsPct}% SWS` : ""} = {fmt(s.duty + s.sws)}</span>
             <span className="arrow">→</span>
-            <span className="step">+{c.dutyPct}% duty = {fmt(s.withDuty)}</span>
+            <span className="step">+₹{c.packingFlat} packing → landed {fmt(s.landed)}</span>
             <span className="arrow">→</span>
-            <span className="step">+{c.gstPct}% GST = {fmt(s.withGst)}</span>
+            <span className="step">+{c.profitPct}% margin = {fmt(s.sellingExGst)}</span>
             <span className="arrow">→</span>
-            <span className="step">+{c.profitPct}% margin</span>
+            <span className="step">+{c.gstPct}% GST = {fmt(s.outputGst)}</span>
             <span className="arrow">→</span>
             <span className="result">{fmt(s.selling)}</span>
+          </div>
+          <div style={{ fontSize: 9, color: "var(--ink4)", marginTop: 8, lineHeight: 1.6 }}>
+            GST is the customer&apos;s tax (you collect &amp; remit it) — it is applied last and never
+            marked up by profit. Import IGST paid at customs is recoverable (ITC) and is not part of cost.
           </div>
         </div>
       </div>
@@ -300,11 +306,11 @@ export function PricingEngine({
                 <th>Series</th>
                 <th>Model</th>
                 <th>Dimensions</th>
-                <th style={{ textAlign: "right" }}>Price (INR, incl. all taxes)</th>
-                <th style={{ textAlign: "right" }}>INR Base</th>
-                <th style={{ textAlign: "right" }}>After Duty+GST</th>
+                <th style={{ textAlign: "right" }}>EUR</th>
+                <th style={{ textAlign: "right" }}>Landed Cost</th>
+                <th style={{ textAlign: "right" }}>Excl. GST</th>
                 <th style={{ textAlign: "right", background: "rgba(154,122,58,.12)" }}>
-                  Selling Price (INR)
+                  Selling (incl. GST)
                 </th>
               </tr>
             </thead>
@@ -324,8 +330,8 @@ export function PricingEngine({
                     </td>
                     <td style={{ fontSize: 10, color: "var(--ink4)" }}>{r.dims}</td>
                     <td style={{ textAlign: "right" }}>€{r.eur || "—"}</td>
-                    <td style={{ textAlign: "right" }}>{r.bd ? fmt(r.bd.inrBase) : "—"}</td>
-                    <td style={{ textAlign: "right" }}>{r.bd ? fmt(r.bd.withGst) : "—"}</td>
+                    <td style={{ textAlign: "right" }}>{r.bd ? fmt(r.bd.landed) : "—"}</td>
+                    <td style={{ textAlign: "right" }}>{r.bd ? fmt(r.bd.sellingExGst) : "—"}</td>
                     <td
                       style={{
                         textAlign: "right",
