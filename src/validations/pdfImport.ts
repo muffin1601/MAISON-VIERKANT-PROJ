@@ -111,20 +111,11 @@ export interface ImportFormPatch {
  * (Replace / Merge / Skip) what to do with them.
  */
 export function toFormPatch(raw: ImportedProduct): ImportFormPatch {
-  const specsText = (raw.specifications ?? [])
-    .map((s) => {
-      const label = sanitizeText(s?.label, 80);
-      const value = sanitizeText(s?.value, 200);
-      if (!label && !value) return "";
-      return label && value ? `${label}: ${value}` : label || value;
-    })
-    .filter(Boolean)
-    .slice(0, 30);
-
+  // Description is only the real prose from the PDF (short + long). Specifications are NOT
+  // folded in — if the PDF has no description paragraph, the field stays empty.
   const descParts = [
     sanitizeText(raw.shortDescription, 600),
     sanitizeText(raw.description, 3000),
-    specsText.length ? specsText.join("\n") : "",
   ].filter(Boolean);
 
   // Finishes = explicit finishes + material (material is a colour-like attribute here).

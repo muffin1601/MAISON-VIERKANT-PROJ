@@ -254,24 +254,6 @@ function findDescription(lines: Lines, text: string): { description: string; sho
   return { description, shortDescription };
 }
 
-/** Compose a clean description from facts when the PDF has no usable prose (spec-sheet PDFs). */
-function generateDescription(
-  name: string,
-  series: string,
-  material: string,
-  finishes: string[],
-  variants: NonNullable<ImportedProduct["variants"]>,
-): string {
-  if (!name) return "";
-  const sizes = variants.map((v) => v.code).filter(Boolean);
-  let s = series ? `${name} from the ${series} collection` : name;
-  if (material) s += `, crafted from ${material.toLowerCase()}`;
-  s += ".";
-  if (sizes.length) s += ` Available in ${sizes.length} size${sizes.length > 1 ? "s" : ""}: ${sizes.join(", ")}.`;
-  if (finishes.length) s += ` Finishes: ${finishes.slice(0, 6).join(", ")}.`;
-  return s;
-}
-
 /**
  * Detect variant/model rows by the product name + size pattern, e.g. "Adamas 60 82cm 87,5cm
  * 64cm 70kg" — codes that contain a space (so the generic code regex misses them). Measurement
@@ -329,9 +311,8 @@ export function parseProductText(raw: string): ImportedProduct {
   const namedVariants = findVariantsByName(text, name);
   const variants = namedVariants.length ? namedVariants : findVariants(lines);
 
-  // Use real prose if present, otherwise synthesise a clean description from the parsed facts.
-  const description =
-    foundDescription || generateDescription(name, series, material, finishes, variants);
+  // Only use a description that actually exists in the PDF — never synthesise one.
+  const description = foundDescription;
 
   // Fields we don't want duplicated into the generic specifications list.
   const consumed = new Set(

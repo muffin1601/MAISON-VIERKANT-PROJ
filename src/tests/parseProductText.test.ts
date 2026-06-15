@@ -90,10 +90,8 @@ describe("parseProductText", () => {
     const a60 = r.variants?.find((v) => v.code === "ADAMAS 60");
     expect(a60?.dims).toContain("82cm");
     expect(a60?.dims).toContain("70kg");
-    // No prose in the sheet → a clean description is synthesised, not the flattened table.
-    expect(r.description).toContain("ADAMAS");
-    expect(r.description).toContain("Available in 2 sizes");
-    expect(r.description).not.toContain("82cm");
+    // No prose paragraph in the sheet → description stays empty (never the flattened table).
+    expect(r.description).toBe("");
   });
 
   it("hasUsableData distinguishes real content from noise", () => {
