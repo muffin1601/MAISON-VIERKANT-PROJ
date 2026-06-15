@@ -7,9 +7,11 @@ import { calcINR, type PricingConfig } from "@/services/pricing/PricingService";
 import { showToast } from "@/lib/toast";
 import { useUpload, deleteAsset } from "@/lib/upload/useUpload";
 import {
-  X, FileText, Upload, ImagePlus, Plus, Trash2, CloudUpload, ArrowRight, Download,
+  X, FileText, Upload, ImagePlus, Plus, Trash2, CloudUpload, ArrowRight, Download, FileUp,
 } from "@/components/ui/icons";
 import { saveProduct, deleteProduct } from "./actions";
+import { PdfImport, type ApplyMode } from "./PdfImport";
+import type { ImportFormPatch } from "@/validations/pdfImport";
 
 interface EditModel {
   code: string;
@@ -46,14 +48,13 @@ export function ProductEditor({
   const [documents, setDocuments] = useState<DocItem[]>(product?.documents ?? []);
   const [status, setStatus] = useState(product?.status ?? "ACTIVE");
   const [featured, setFeatured] = useState(product?.featured ?? false);
-  const [seoTitle, setSeoTitle] = useState(product?.seoTitle ?? "");
-  const [seoDescription, setSeoDescription] = useState(product?.seoDescription ?? "");
   const [finishes, setFinishes] = useState<string[]>(product?.finishes ?? []);
   const [finInput, setFinInput] = useState("");
   const [models, setModels] = useState<EditModel[]>(
     product?.models.map((m) => ({ code: m.code, eur: m.eur, dims: m.dims })) ?? [],
   );
   const [saving, setSaving] = useState(false);
+  const [showImport, setShowImport] = useState(false);
 
   const heroFile = useRef<HTMLInputElement>(null);
   const galleryFile = useRef<HTMLInputElement>(null);
@@ -129,6 +130,69 @@ export function ProductEditor({
     if (doc.bucket && doc.storageKey) void deleteAsset(doc.bucket, doc.storageKey);
   }
 
+  // True when the form already holds content → PdfImport offers Replace/Merge/Skip.
+  const hasExistingData = Boolean(
+    series.trim() || name.trim() || description.trim() ||
+    heroImg || gallery.length || finishes.length || models.length,
+  );
+
+  /**
+   * Apply an extracted PDF patch onto the form.
+   *   replace — overwrite each field that the import provides a value for.
+   *   merge   — only fill empty fields; append new unique list items (finishes/models).
+   * Image URLs are uploaded already (via the existing upload flow) and slotted into hero/gallery.
+   */
+  function applyImport(patch: ImportFormPatch, imageUrls: string[], docs: DocItem[], mode: ApplyMode) {
+    const put = (val: string, cur: string, set: (v: string) => void) => {
+      if (!val) return;
+      if (mode === "replace" || !cur.trim()) set(val);
+    };
+    put(patch.series, series, setSeries);
+    put(patch.name, name, setName);
+    put(patch.description, description, setDescription);
+
+    if (patch.finishes.length) {
+      setFinishes((cur) =>
+        mode === "replace" ? Array.from(new Set(patch.finishes)) : Array.from(new Set([...cur, ...patch.finishes])),
+      );
+    }
+    if (patch.models.length) {
+      const incoming: EditModel[] = patch.models.map((m) => ({ code: m.code, eur: m.eur, dims: m.dims }));
+      setModels((cur) => {
+        if (mode === "replace" || cur.length === 0) return incoming;
+        const seen = new Set(cur.map((m) => m.code.trim().toLowerCase()));
+        return [...cur, ...incoming.filter((m) => !m.code || !seen.has(m.code.trim().toLowerCase()))];
+      });
+    }
+
+    // Images: first becomes hero (if replacing or none set), rest extend the gallery.
+    if (imageUrls.length) {
+      const [first, ...rest] = imageUrls;
+      let overflow = rest;
+      if (mode === "replace" || !heroImg) {
+        setHeroImg(first);
+      } else {
+        overflow = imageUrls; // keep existing hero; all imported go to gallery
+      }
+      if (overflow.length) {
+        setGallery((g) => {
+          const base = mode === "replace" ? [] : g;
+          return [...base, ...overflow].slice(0, MAX_GALLERY);
+        });
+      } else if (mode === "replace") {
+        setGallery([]);
+      }
+    }
+
+    // Source PDF (and any other extracted docs) → existing documents list, de-duplicated by URL.
+    if (docs.length) {
+      setDocuments((cur) => {
+        const have = new Set(cur.map((d) => d.url));
+        return [...cur, ...docs.filter((d) => !have.has(d.url))];
+      });
+    }
+  }
+
   async function save() {
     if (!series.trim() || !name.trim()) {
       showToast("Series and name are required.");
@@ -144,8 +208,6 @@ export function ProductEditor({
         eurPrice: models[0]?.eur ?? 0,
         status: status as "ACTIVE" | "DRAFT" | "ARCHIVED",
         featured,
-        seoTitle,
-        seoDescription,
         heroImg,
         gallery,
         drawings,
@@ -181,6 +243,7 @@ export function ProductEditor({
   }
 
   return (
+    <>
     <div
       style={{ position: "fixed", inset: 0, background: "rgba(26,24,20,.8)", zIndex: 900, overflowY: "auto", padding: "24px 16px" }}
       onClick={onClose}
@@ -207,6 +270,22 @@ export function ProductEditor({
         {/* Editor body */}
         {(
           <div style={{ padding: 22, display: "grid", gap: 18 }}>
+            {/* AI import — populate the form from a product PDF */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap", background: "var(--cream2)", border: "1px solid var(--cream3)", borderRadius: 4, padding: "10px 14px" }}>
+              <div style={{ fontSize: 11, color: "var(--ink4)", lineHeight: 1.6 }}>
+                Have a catalogue page or spec sheet? Auto-fill name, description, dimensions, variants,
+                finishes, SEO and images.
+              </div>
+              <button
+                type="button"
+                className="a-btn-o"
+                style={{ width: "auto", padding: "8px 16px", fontSize: 10, display: "inline-flex", alignItems: "center", gap: 7, whiteSpace: "nowrap" }}
+                onClick={() => setShowImport(true)}
+              >
+                <FileUp size={13} strokeWidth={1.5} /> Import From PDF
+              </button>
+            </div>
+
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
               <div className="a-field" style={{ margin: 0 }}>
                 <label className="a-label">Series / Category *</label>
@@ -238,17 +317,6 @@ export function ProductEditor({
                 Featured product
               </label>
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-              <div className="a-field" style={{ margin: 0 }}>
-                <label className="a-label">SEO Title</label>
-                <input className="a-input" style={{ margin: 0 }} value={seoTitle} onChange={(e) => setSeoTitle(e.target.value)} placeholder="Defaults to product name" />
-              </div>
-              <div className="a-field" style={{ margin: 0 }}>
-                <label className="a-label">SEO Description</label>
-                <input className="a-input" style={{ margin: 0 }} value={seoDescription} onChange={(e) => setSeoDescription(e.target.value)} placeholder="Meta description for search" />
-              </div>
-            </div>
-
             {/* 1 · Hero */}
             <div>
               <label className="a-label">1 · Hero / Main Product Image</label>
@@ -434,6 +502,15 @@ export function ProductEditor({
         )}
       </div>
     </div>
+
+    {showImport && (
+      <PdfImport
+        hasExistingData={hasExistingData}
+        onApply={applyImport}
+        onClose={() => setShowImport(false)}
+      />
+    )}
+    </>
   );
 }
 
