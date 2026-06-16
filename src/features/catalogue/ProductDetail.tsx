@@ -20,6 +20,7 @@ export function ProductDetail({ p, pricing }: { p: ProductView; pricing: Pricing
   const imgs = p.imgs;
   const mods = p.models;
   const cm = mods[selModelIdx];
+  const catalogueUrl = p.documents[0]?.url ?? p.drawings[0] ?? "";
 
   function addToCart() {
     const modelCode = mods.length > 0 ? mods[selModelIdx].code : p.name;
@@ -30,23 +31,58 @@ export function ProductDetail({ p, pricing }: { p: ProductView; pricing: Pricing
   return (
     <div id="page-product" className="page active">
       <div className="sw">
-        <Link
-          href="/collection"
+        <div
           style={{
-            display: "inline-block",
-            background: "none",
-            border: "none",
-            fontSize: 11,
-            letterSpacing: ".14em",
-            textTransform: "uppercase",
-            color: "var(--ink3)",
-            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 16,
             marginBottom: 32,
-            fontFamily: "'Jost', sans-serif",
           }}
         >
-          ← Back to Collection
-        </Link>
+          <Link
+            href="/collection"
+            style={{
+              display: "inline-block",
+              background: "none",
+              border: "none",
+              fontSize: 11,
+              letterSpacing: ".14em",
+              textTransform: "uppercase",
+              color: "var(--ink3)",
+              cursor: "pointer",
+              fontFamily: "'Jost', sans-serif",
+            }}
+          >
+            ← Back to Collection
+          </Link>
+          {catalogueUrl && (
+            <a
+              href={catalogueUrl}
+              target="_blank"
+              rel="noreferrer"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 8,
+                background: "transparent",
+                color: "var(--ink)",
+                border: "1px solid var(--ink3)",
+                padding: "10px 22px",
+                fontSize: 11,
+                letterSpacing: ".18em",
+                textTransform: "uppercase",
+                cursor: "pointer",
+                fontFamily: "'Jost', sans-serif",
+                whiteSpace: "nowrap",
+                textDecoration: "none",
+              }}
+            >
+              <FileText size={14} strokeWidth={1.5} style={{ color: "var(--gold)" }} />
+              View Catalogue
+            </a>
+          )}
+        </div>
         <div className="pd-grid">
           <div>
             <div className="pd-main-img">
