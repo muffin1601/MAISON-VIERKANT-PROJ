@@ -1,8 +1,7 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth/session";
 import { allowedNav } from "@/lib/auth/rbac";
-import { AdminNav } from "@/components/layout/AdminNav";
-import { SignOutButton } from "@/components/layout/SignOutButton";
+import { AdminSidebar } from "@/components/layout/AdminSidebar";
 
 const ROLE_LABELS: Record<string, string> = {
   SUPER_ADMIN: "Super Admin",
@@ -21,16 +20,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   return (
     // Mirrors prototype #admin-panel (display:flex row) using verbatim classes.
     <div id="admin-panel" style={{ display: "flex" }}>
-      <div className="a-sidebar">
-        <div className="a-sb-logo">
-          <div className="a-sb-name">Maison Vierkant</div>
-          <div className="a-sb-sub">{ROLE_LABELS[user.role] ?? "Console"}</div>
-        </div>
-        <AdminNav items={nav} />
-        <div className="a-exit">
-          <SignOutButton />
-        </div>
-      </div>
+      <AdminSidebar items={nav} roleLabel={ROLE_LABELS[user.role] ?? "Console"} />
       <div className="a-main">{children}</div>
     </div>
   );

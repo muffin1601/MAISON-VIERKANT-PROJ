@@ -276,15 +276,20 @@ model Invoice {
 }
 
 model Payment {
-  id        String   @id @default(cuid())
-  orderId   String
-  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  provider  String   @default("MOCK")
-  type      String   @default("ADVANCE") // ADVANCE | BALANCE
-  status    String   @default("PENDING")
-  amountInr Decimal  @db.Decimal(12, 2)
-  reference String?
-  createdAt DateTime @default(now())
+  id               String   @id @default(cuid())
+  orderId          String
+  order            Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  provider         String   @default("MOCK") // MOCK | RAZORPAY | COD
+  method           String? // upi | card | netbanking | cod | etc. (from gateway)
+  type             String   @default("ADVANCE") // ADVANCE | BALANCE | FULL
+  status           String   @default("PENDING") // PENDING | CAPTURED | FAILED | REFUNDED
+  amountInr        Decimal  @db.Decimal(12, 2)
+  reference        String? // free-form human reference
+  gatewayOrderId   String?  @unique // e.g. Razorpay order_xxx
+  gatewayPaymentId String?  @unique // e.g. Razorpay pay_xxx — also the capture idempotency key
+  signature        String? // gateway signature (audit trail)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 }
 
 // ---------- QUOTES (B2B) ----------

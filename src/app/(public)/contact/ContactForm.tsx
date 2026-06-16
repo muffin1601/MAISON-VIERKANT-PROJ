@@ -30,7 +30,7 @@ export function ContactForm() {
   }
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+    <div className="r-grid-2" style={{ gap: 12 }}>
       <div>
         <label className="form-label">Your Name</label>
         <input

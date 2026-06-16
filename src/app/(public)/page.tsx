@@ -149,7 +149,7 @@ export default async function HomePage() {
 
       {/* TRADE BLOCKS */}
       <div className="sw">
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 28 }}>
+        <div className="r-grid-2" style={{ gap: 28 }}>
           <div style={{ background: "var(--cream2)", padding: 40, borderRadius: 4 }}>
             <div className="ey">Trade</div>
             <h3

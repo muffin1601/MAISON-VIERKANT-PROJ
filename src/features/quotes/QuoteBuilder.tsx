@@ -130,7 +130,7 @@ export function QuoteBuilder({
         Generate professional client quotations with model selection, discounts and delivery terms
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: 16, alignItems: "start" }}>
+      <div className="r-grid-aside" style={{ gap: 16, alignItems: "start" }}>
         <div>
           {/* Customer */}
           <div className="a-card" style={{ marginBottom: 14 }}>

@@ -36,7 +36,8 @@ export function ProductDetail({ p, pricing }: { p: ProductView; pricing: Pricing
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            gap: 16,
+            flexWrap: "wrap",
+            gap: 12,
             marginBottom: 32,
           }}
         >
@@ -265,6 +266,20 @@ export function ProductDetail({ p, pricing }: { p: ProductView; pricing: Pricing
             )}
           </div>
         </div>
+      </div>
+
+      {/* Sticky add-to-cart bar — mobile/tablet only (shown via CSS ≤860px). */}
+      <div className="pd-sticky-bar">
+        <div className="pd-sticky-price">
+          {mods.length === 0
+            ? "On Request"
+            : cm.eur > 0
+              ? fmt(calcINR(cm.eur, pricing))
+              : "On Request"}
+        </div>
+        <button className="add-btn" onClick={addToCart}>
+          Add to Cart
+        </button>
       </div>
     </div>
   );

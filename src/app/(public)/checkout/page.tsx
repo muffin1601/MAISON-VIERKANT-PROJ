@@ -1,5 +1,6 @@
 import { getProducts, getActivePricing } from "@/services/catalogue/catalogue";
 import { calcINR } from "@/services/pricing/PricingService";
+import { env } from "@/lib/env";
 import type { PriceMap } from "@/features/cart/CartView";
 import { CheckoutView } from "@/features/checkout/CheckoutView";
 
@@ -19,5 +20,5 @@ export default async function CheckoutPage() {
     }
     priceMap[`${p.code}|${p.name}`] = { unit: calcINR(p.eurPrice, pricing), dims: p.dims, ...info };
   }
-  return <CheckoutView priceMap={priceMap} />;
+  return <CheckoutView priceMap={priceMap} codEnabled={env.COD_ENABLED} />;
 }

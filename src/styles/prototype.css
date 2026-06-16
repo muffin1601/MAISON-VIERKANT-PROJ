@@ -378,3 +378,184 @@ footer{background:var(--ink);color:var(--cream2);padding:52px 40px 26px}
 /* FORM */
 .form-input{border:1px solid var(--cream3);border-radius:3px;padding:9px 12px;font-size:13px;outline:none;background:white;font-family:'Jost',sans-serif;color:var(--ink);width:100%;margin-bottom:12px}
 .form-label{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink3);display:block;margin-bottom:5px}
+
+/* ============================================================================
+   RESPONSIVE LAYER — added on top of the verbatim prototype rules above.
+   The prototype is desktop-perfect; these rules progressively adapt it for
+   tablets and phones WITHOUT touching the desktop appearance (>=1025px is
+   untouched). Strategy: fluid type via clamp(), grids that collapse by
+   breakpoint, an off-canvas admin drawer, a public hamburger menu, internal
+   table scrolling, and touch-friendly hit areas. No functional/visual-identity
+   changes — only layout adaptation.
+   ============================================================================ */
+
+/* --- Kill all horizontal scrolling at the root --- */
+html,body{max-width:100%;overflow-x:hidden}
+
+/* --- Fluid typography (caps at the prototype's desktop sizes) --- */
+.hero-title{font-size:clamp(40px,7.5vw,92px)}
+.st{font-size:clamp(27px,5vw,40px)}
+.pd-name{font-size:clamp(30px,6vw,48px)}
+.modal-title{font-size:clamp(24px,5vw,32px)}
+.a-title{font-size:clamp(23px,4vw,32px)}
+.ab-h{font-size:clamp(25px,4.5vw,34px)}
+.cat-cta-text h2{font-size:clamp(26px,4vw,36px)}
+.sum-title{font-size:clamp(19px,3vw,21px)}
+.upload-zone-t{font-size:clamp(20px,3vw,24px)}
+
+/* --- Mobile nav scaffolding (markup lives in PublicHeader) --- */
+.nav-toggle{display:none;background:none;border:none;cursor:pointer;padding:8px;width:44px;height:44px;align-items:center;justify-content:center;color:var(--ink)}
+.nav-toggle span{position:relative;display:block;width:22px;height:1.5px;background:var(--ink);transition:all .25s}
+.nav-toggle span::before,.nav-toggle span::after{content:"";position:absolute;left:0;width:22px;height:1.5px;background:var(--ink);transition:all .25s}
+.nav-toggle span::before{top:-7px}.nav-toggle span::after{top:7px}
+.nav-toggle[aria-expanded="true"] span{background:transparent}
+.nav-toggle[aria-expanded="true"] span::before{top:0;transform:rotate(45deg)}
+.nav-toggle[aria-expanded="true"] span::after{top:0;transform:rotate(-45deg)}
+
+/* ===== Tablet / small-laptop (<=1024px) ===== */
+@media(max-width:1024px){
+  .pg{grid-template-columns:repeat(2,1fr);gap:22px}
+  .pg-4{grid-template-columns:repeat(3,1fr)}
+  .pd-grid{gap:40px}
+  .stat-grid{grid-template-columns:repeat(2,1fr)}
+  .contact-grid{gap:40px}
+  .header-inner{padding:0 24px}
+  .nav-links{gap:18px}
+}
+
+/* ===== Tablet portrait & below (<=900px): admin drawer + header menu ===== */
+@media(max-width:900px){
+  /* Public header → hamburger */
+  .nav-toggle{display:flex}
+  .nav-links{position:fixed;top:64px;left:0;right:0;background:rgba(248,245,240,0.98);backdrop-filter:blur(12px);border-bottom:1px solid var(--cream3);flex-direction:column;align-items:stretch;gap:0;padding:8px 24px 20px;transform:translateY(-12px);opacity:0;visibility:hidden;pointer-events:none;transition:opacity .2s,transform .2s,visibility .2s;max-height:calc(100dvh - 64px);overflow-y:auto;z-index:190}
+  .nav-links.open{transform:translateY(0);opacity:1;visibility:visible;pointer-events:auto}
+  .nav-links .nav-btn{padding:14px 4px;border-bottom:1px solid var(--cream3);font-size:13px;min-height:44px;display:flex;align-items:center}
+  .nav-links .nav-btn:last-of-type{border-bottom:none}
+  .nav-links .cart-btn{position:absolute;top:-49px;right:64px}
+  .nav-links .admin-toggle{padding:14px 4px;min-height:44px;display:flex;align-items:center}
+
+  /* Admin: off-canvas drawer */
+  #admin-panel{height:auto;min-height:100dvh;overflow:visible;flex-direction:column}
+  .a-mobile-bar{display:flex}
+  .a-sidebar{position:fixed;top:0;left:0;height:100dvh;z-index:600;transform:translateX(-100%);transition:transform .25s ease;width:248px;max-width:84vw}
+  .a-sidebar.open{transform:translateX(0);box-shadow:0 0 40px rgba(0,0,0,.35)}
+  .a-drawer-overlay{position:fixed;inset:0;background:rgba(26,24,20,.5);z-index:550;opacity:0;visibility:hidden;transition:opacity .25s,visibility .25s}
+  .a-drawer-overlay.open{opacity:1;visibility:visible}
+  .a-main{height:auto;overflow:visible;padding:22px 20px}
+}
+
+/* ===== Phones (<=640px) ===== */
+@media(max-width:640px){
+  .sw{padding:48px 20px}
+  .header-inner{padding:0 18px}
+  .feature-strip-inner{grid-template-columns:repeat(2,1fr)}
+  .fi{padding:16px 18px}
+  .fi:nth-child(2n){border-right:none}
+  .hero{height:auto;min-height:78vh}
+  .hero-content{padding:0 24px 52px}
+  .pg{grid-template-columns:repeat(2,1fr);gap:16px}
+  .pg-4{grid-template-columns:repeat(2,1fr)}
+  .pd-grid{grid-template-columns:1fr;gap:28px}
+  .pd-specs{grid-template-columns:repeat(2,1fr)}
+  .sh{flex-direction:column;align-items:flex-start;gap:10px;margin-bottom:32px}
+  .cart-grid{grid-template-columns:1fr;gap:28px}
+  .contact-grid{grid-template-columns:1fr;gap:32px}
+  .proj-grid{grid-template-columns:1fr;gap:22px}
+  .fg-grid{grid-template-columns:1fr 1fr;gap:28px}
+  .f-bottom{flex-direction:column;gap:8px;text-align:center}
+  .cat-cta{flex-direction:column;align-items:flex-start;text-align:left;padding:48px 24px;gap:22px}
+  .coll-hero{padding:56px 24px 40px}
+  .about-hero{padding:72px 24px 52px}
+  .about-section{padding:52px 24px}
+  .qb{padding:52px 24px}
+  footer{padding:44px 24px 24px}
+  .stat-grid{grid-template-columns:repeat(2,1fr)}
+  .a-2col{grid-template-columns:1fr}
+  .modal{padding:28px 22px;width:calc(100% - 32px)}
+  .qty-row{flex-wrap:wrap}
+  .qty-ctrl{flex:1}
+  .add-btn{flex:1 1 auto}
+  /* Touch targets */
+  .nav-btn,.fb,.fin-btn,.va-btn,.btn-primary,.btn-dark,.btn-ghost,.btn-gold-outline,.mt-sel-btn{min-height:44px}
+  .qty-ctrl button{min-width:44px;min-height:44px}
+  .cart-btn{width:40px;height:40px}
+  /* Wide tables scroll internally instead of the page */
+  .model-table,.a-table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;white-space:nowrap;width:100%}
+  .a-table th,.a-table td{white-space:nowrap}
+}
+
+/* ===== Small phones (<=420px) ===== */
+@media(max-width:420px){
+  .pg,.pg-4{grid-template-columns:1fr;gap:18px}
+  .feature-strip-inner{grid-template-columns:1fr}
+  .fi{border-right:none}
+  .stat-grid{grid-template-columns:1fr}
+  .fg-grid{grid-template-columns:1fr;gap:24px}
+  .pd-specs{grid-template-columns:1fr}
+  .sw{padding:40px 16px}
+  .header-inner{padding:0 14px}
+  .logo-main{font-size:18px}
+}
+
+/* ============================================================================
+   PRODUCT DETAIL — dedicated, robust responsive behaviour (critical page)
+   ============================================================================ */
+/* Grid children default to min-width:auto, which lets wide content (the model
+   table) blow the column past the viewport. Allow them to shrink so inner
+   overflow containers actually contain their own horizontal scroll. */
+.pd-grid > div{min-width:0}
+/* The model/price table can be wider than a phone column → scroll it INSIDE its
+   own container so it never forces page-level horizontal scroll. */
+#pd-model-table{overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%}
+#pd-model-table .model-table{min-width:430px}
+
+/* Sticky add-to-cart bar: hidden by default, shown on mobile/tablet only. */
+.pd-sticky-bar{display:none}
+
+@media(max-width:860px){
+  /* Stack: image column first (already DOM order), info below — full width. */
+  .pd-grid{grid-template-columns:1fr;gap:26px}
+  /* The 4/5 portrait ratio is huge at full phone width → cap the height so the
+     image stays a sensible, scannable size (object-fit:cover keeps it clean). */
+  .pd-main-img{aspect-ratio:auto;height:clamp(300px,52vh,440px)}
+  .pd-main-img img{height:100%}
+  /* Swipeable thumbnail strip with large (≥44px) touch targets. */
+  .pd-thumbs{display:flex;gap:8px;overflow-x:auto;-webkit-overflow-scrolling:touch;scroll-snap-type:x mandatory;padding-bottom:4px}
+  .pd-thumb{flex:0 0 74px;width:74px;height:74px;aspect-ratio:auto;opacity:1;scroll-snap-align:start;border:1px solid var(--cream3)}
+  .pd-thumb.active{border-color:var(--gold)}
+  /* Touch-friendly quantity + add controls. */
+  .qty-ctrl button{min-width:46px;min-height:46px}
+  .qty-row .add-btn{min-height:46px}
+  /* Leave room so the sticky bar never covers the story/downloads. */
+  #page-product{padding-bottom:80px}
+  /* Reveal the sticky bar. */
+  .pd-sticky-bar{
+    display:flex;position:fixed;left:0;right:0;bottom:0;z-index:180;
+    align-items:center;gap:12px;
+    padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px));
+    background:rgba(248,245,240,.98);backdrop-filter:blur(12px);
+    border-top:1px solid var(--cream3);box-shadow:0 -4px 20px rgba(0,0,0,.06)
+  }
+  .pd-sticky-bar .pd-sticky-price{
+    flex:1;min-width:0;font-family:'Cormorant Garamond',serif;
+    font-size:clamp(17px,5vw,22px);color:var(--ink);white-space:nowrap;
+    overflow:hidden;text-overflow:ellipsis
+  }
+  .pd-sticky-bar .add-btn{flex:0 0 auto;min-height:48px;padding:12px 26px}
+}
+
+/* ===== Ultra-wide: keep identity, just stop content from feeling lost ===== */
+@media(min-width:1921px){
+  .header-inner,.hero-content,.feature-strip-inner,.sw,.coll-hero-c,.footer-inner{max-width:1440px}
+}
+
+/* Reusable two-column block that collapses on phones (for inline-grid sites) */
+.r-grid-2{display:grid;grid-template-columns:1fr 1fr}
+@media(max-width:640px){.r-grid-2{grid-template-columns:1fr}}
+.r-grid-aside{display:grid;grid-template-columns:1fr 320px}
+@media(max-width:768px){.r-grid-aside{grid-template-columns:1fr}}
+
+/* Admin mobile top bar — hidden on desktop, shown in the <=900px block */
+.a-mobile-bar{display:none;position:sticky;top:0;z-index:500;align-items:center;gap:12px;background:var(--ink);color:var(--cream);padding:12px 16px}
+.a-mobile-bar button{background:none;border:none;color:var(--cream);cursor:pointer;width:40px;height:40px;display:flex;align-items:center;justify-content:center;padding:0}
+.a-mobile-bar .a-mobile-title{font-family:'Cormorant Garamond',serif;font-size:17px}

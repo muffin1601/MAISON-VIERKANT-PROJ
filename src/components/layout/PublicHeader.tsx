@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import { useCart } from "@/store/cart";
 
 const LINKS = [
@@ -16,6 +17,12 @@ const LINKS = [
 export function PublicHeader() {
   const pathname = usePathname();
   const count = useCart((s) => s.items.reduce((sum, i) => sum + i.qty, 0));
+  const [open, setOpen] = useState(false);
+
+  // Close the mobile menu whenever the route changes.
+  useEffect(() => {
+    setOpen(false);
+  }, [pathname]);
 
   const isActive = (href: string) =>
     href === "/" ? pathname === "/" : pathname.startsWith(href);
@@ -29,7 +36,17 @@ export function PublicHeader() {
           </div>
           <div className="logo-sub">Curated by Watcon</div>
         </Link>
-        <nav className="nav-links">
+        <button
+          type="button"
+          className="nav-toggle"
+          aria-expanded={open}
+          aria-controls="primary-nav"
+          aria-label={open ? "Close menu" : "Open menu"}
+          onClick={() => setOpen((v) => !v)}
+        >
+          <span />
+        </button>
+        <nav id="primary-nav" className={`nav-links${open ? " open" : ""}`}>
           {LINKS.map((l) => (
             <Link
               key={l.key}

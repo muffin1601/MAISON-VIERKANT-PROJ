@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useCart } from "@/store/cart";
 import { fmt } from "@/lib/format";
 import { showToast } from "@/lib/toast";
+import { loadRazorpay, type RazorpaySuccess } from "@/lib/razorpay-client";
 import type { PriceMap } from "@/features/cart/CartView";
 
 const CO_STEPS = ["Your Details", "Verify Phone", "Review Order", "Payment"];
@@ -36,7 +37,13 @@ interface CoData {
 }
 
 /** Faithful port of the prototype 4-step checkout (renderCO + coRenderStep1..4 + placeOrder). */
-export function CheckoutView({ priceMap }: { priceMap: PriceMap }) {
+export function CheckoutView({
+  priceMap,
+  codEnabled = true,
+}: {
+  priceMap: PriceMap;
+  codEnabled?: boolean;
+}) {
   const items = useCart((s) => s.items);
   const clear = useCart((s) => s.clear);
 
@@ -47,10 +54,16 @@ export function CheckoutView({ priceMap }: { priceMap: PriceMap }) {
   const [otpField, setOtpField] = useState("");
   const [otpMsg, setOtpMsg] = useState("");
   const [verified, setVerified] = useState(false);
-  const [pay, setPay] = useState("bank");
-  const [placed, setPlaced] = useState<{ num: string; name: string; phone: string; email: string } | null>(
-    null,
-  );
+  const [pay, setPay] = useState<"razorpay" | "cod">("razorpay");
+  const [processing, setProcessing] = useState(false);
+  const [payError, setPayError] = useState("");
+  const [placed, setPlaced] = useState<{
+    num: string;
+    name: string;
+    phone: string;
+    email: string;
+    method: "razorpay" | "cod";
+  } | null>(null);
 
   const unitOf = (id: string, code: string) => priceMap[`${id}|${code}`]?.unit ?? 0;
   const total = items.reduce((s, i) => s + unitOf(i.id, i.code) * i.qty, 0);
@@ -98,17 +111,103 @@ export function CheckoutView({ priceMap }: { priceMap: PriceMap }) {
     }
   }
 
-  function placeOrder() {
-    const num = "MVI-ORD-" + Date.now().toString().slice(-6);
-    setPlaced({ num, name: data.name || "", phone: data.phone || "", email: data.email || "" });
-    // Persist server-side when the DB is connected (no-op/fallback otherwise).
-    fetch("/api/checkout/order", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ number: num, customer: data, items, total }),
-    }).catch(() => {});
+  // Stable per-session order number → retrying a failed payment reuses the same
+  // order (server-side idempotency) instead of creating duplicates.
+  const [orderNum] = useState(() => "MVI-ORD-" + Date.now().toString().slice(-6));
+
+  function finish(method: "razorpay" | "cod") {
+    setPlaced({
+      num: orderNum,
+      name: data.name || "",
+      phone: data.phone || "",
+      email: data.email || "",
+      method,
+    });
     clear();
-    showToast("Order enquiry submitted — we will call you within 24 hours");
+  }
+
+  async function placeOrder() {
+    if (processing) return;
+    setPayError("");
+    setProcessing(true);
+    try {
+      const res = await fetch("/api/checkout/order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ number: orderNum, customer: data, items, paymentMethod: pay }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        throw new Error(json?.error?.message || "Could not create your order. Please try again.");
+      }
+      const payment = json.data?.payment as
+        | { provider: string; keyId?: string; gatewayOrderId?: string; amountInr: number }
+        | null;
+
+      // COD or mock provider (no live gateway in this env) → order already confirmed.
+      if (!payment || payment.provider === "cod" || payment.provider === "mock") {
+        finish(pay);
+        return;
+      }
+
+      // Razorpay → open hosted checkout and verify server-side on success.
+      if (payment.provider === "razorpay" && payment.keyId && payment.gatewayOrderId) {
+        const ok = await loadRazorpay();
+        if (!ok || !window.Razorpay) {
+          throw new Error("Could not reach the payment gateway. Check your connection.");
+        }
+        const rzp = new window.Razorpay({
+          key: payment.keyId,
+          order_id: payment.gatewayOrderId,
+          amount: Math.round(payment.amountInr * 100),
+          currency: "INR",
+          name: "Maison Vierkant India",
+          description: `Order ${orderNum} · 50% advance`,
+          prefill: { name: data.name, email: data.email, contact: data.phone },
+          theme: { color: "#9a7a3a" },
+          handler: async (resp: RazorpaySuccess) => {
+            try {
+              const v = await fetch("/api/checkout/verify", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  gatewayOrderId: resp.razorpay_order_id,
+                  gatewayPaymentId: resp.razorpay_payment_id,
+                  signature: resp.razorpay_signature,
+                }),
+              });
+              if (!v.ok) throw new Error();
+              finish("razorpay");
+            } catch {
+              setPayError(
+                "Payment received but confirmation is pending. Our team will verify and contact you shortly.",
+              );
+            } finally {
+              setProcessing(false);
+            }
+          },
+          modal: {
+            ondismiss: () => {
+              setProcessing(false);
+              setPayError("Payment was not completed. You can try again.");
+            },
+          },
+        });
+        rzp.on("payment.failed", (r) => {
+          setProcessing(false);
+          setPayError(r?.error?.description || "Payment failed. Please try a different method.");
+        });
+        rzp.open();
+        return; // success/failure handled in callbacks above
+      }
+
+      throw new Error("Unsupported payment response.");
+    } catch (e) {
+      // Any failure before the gateway modal opened → unblock so the user can retry.
+      setProcessing(false);
+      setPayError(e instanceof Error ? e.message : "Something went wrong. Please try again.");
+      showToast(e instanceof Error ? e.message : "Payment could not be started.");
+    }
   }
 
   const addrFull = [
@@ -159,7 +258,9 @@ export function CheckoutView({ priceMap }: { priceMap: PriceMap }) {
           <div id="co-form">
             {placed ? (
               <div style={{ textAlign: "center", padding: "40px 20px" }}>
-                <div style={{ fontSize: 52, marginBottom: 16 }}>🎉</div>
+                <div style={{ fontSize: 52, marginBottom: 16 }}>
+                  {placed.method === "cod" ? "📦" : "✅"}
+                </div>
                 <div
                   style={{
                     fontFamily: "'Cormorant Garamond', serif",
@@ -169,10 +270,10 @@ export function CheckoutView({ priceMap }: { priceMap: PriceMap }) {
                     marginBottom: 8,
                   }}
                 >
-                  Order Enquiry Placed
+                  {placed.method === "cod" ? "Order Confirmed" : "Payment Successful"}
                 </div>
                 <div style={{ fontSize: 13, color: "var(--ink4)", marginBottom: 6 }}>
-                  Reference: <strong style={{ color: "var(--gold)" }}>{placed.num}</strong>
+                  Order No: <strong style={{ color: "var(--gold)" }}>{placed.num}</strong>
                 </div>
                 <p
                   style={{
@@ -183,9 +284,12 @@ export function CheckoutView({ priceMap }: { priceMap: PriceMap }) {
                     margin: "16px auto",
                   }}
                 >
-                  Thank you, <strong>{placed.name}</strong>. Our team will contact you at{" "}
-                  <strong>+91 {placed.phone}</strong> and <strong>{placed.email}</strong> within 24
-                  hours with payment details.
+                  Thank you, <strong>{placed.name}</strong>.{" "}
+                  {placed.method === "cod"
+                    ? "Your order is confirmed. Our team will call you to arrange delivery and advance collection."
+                    : "Your 50% advance has been received and your order is confirmed."}{" "}
+                  A confirmation will be sent to <strong>+91 {placed.phone}</strong> and{" "}
+                  <strong>{placed.email}</strong>.
                 </p>
                 <p
                   style={{
@@ -238,6 +342,9 @@ export function CheckoutView({ priceMap }: { priceMap: PriceMap }) {
                 setNotes={(v) => set({ notes: v })}
                 onBack={() => setStep(3)}
                 onPlace={placeOrder}
+                processing={processing}
+                payError={payError}
+                codEnabled={codEnabled}
               />
             )}
           </div>
@@ -622,36 +729,50 @@ function Step4({
   setNotes,
   onBack,
   onPlace,
+  processing,
+  payError,
+  codEnabled,
 }: {
   total: number;
-  pay: string;
-  setPay: (v: string) => void;
+  pay: "razorpay" | "cod";
+  setPay: (v: "razorpay" | "cod") => void;
   notes: string;
   setNotes: (v: string) => void;
   onBack: () => void;
   onPlace: () => void;
+  processing: boolean;
+  payError: string;
+  codEnabled: boolean;
 }) {
   const advance = Math.round(total * 0.5);
-  const opts: [string, string][] = [
-    ["bank", "🏦 Bank Transfer (NEFT / RTGS)"],
-    ["upi", "📱 UPI / PhonePe / GPay"],
-    ["card", "💳 Credit / Debit Card"],
-    ["cheque", "📝 Cheque / DD"],
+  const opts: { v: "razorpay" | "cod"; label: string; sub: string }[] = [
+    {
+      v: "razorpay",
+      label: "💳 Pay Securely Online",
+      sub: "UPI · Cards · Net Banking · Wallets",
+    },
+    ...(codEnabled
+      ? [{ v: "cod" as const, label: "📦 Cash on Delivery", sub: "Advance collected on delivery" }]
+      : []),
   ];
   return (
     <>
       <div className="co-section-title">Select Payment Method</div>
       <div style={{ marginBottom: 18 }}>
-        {opts.map(([v, l]) => (
-          <label key={v} className={`pay-opt${pay === v ? " active" : ""}`}>
+        {opts.map((o) => (
+          <label key={o.v} className={`pay-opt${pay === o.v ? " active" : ""}`}>
             <input
               type="radio"
               name="pay"
-              value={v}
-              checked={pay === v}
-              onChange={() => setPay(v)}
+              value={o.v}
+              checked={pay === o.v}
+              onChange={() => setPay(o.v)}
+              disabled={processing}
             />
-            <span style={{ fontSize: 13 }}>{l}</span>
+            <span style={{ display: "flex", flexDirection: "column" }}>
+              <span style={{ fontSize: 13 }}>{o.label}</span>
+              <span style={{ fontSize: 10, color: "var(--ink4)" }}>{o.sub}</span>
+            </span>
           </label>
         ))}
       </div>
@@ -662,7 +783,9 @@ function Step4({
         <br />
         Balance {fmt(total - advance)} payable before dispatch from Ostend
         <br />
-        Bank details shared by email within 2 hours of order placement
+        {pay === "razorpay"
+          ? "You will be charged the 50% advance now via our secure payment gateway."
+          : "Our team will arrange advance collection on delivery."}
       </div>
       <div className="co-field" style={{ marginTop: 4 }}>
         <label>Notes / Special Requirements</label>
@@ -682,12 +805,43 @@ function Step4({
           }}
         />
       </div>
-      <div style={{ display: "flex", gap: 12, marginTop: 8, flexWrap: "wrap" }}>
-        <button className="btn-ghost" onClick={onBack} style={{ padding: "11px 20px" }}>
+      {payError && (
+        <div
+          role="alert"
+          style={{
+            background: "#fbeaea",
+            border: "1px solid #e3b6b6",
+            color: "var(--danger)",
+            borderRadius: 3,
+            padding: "10px 13px",
+            fontSize: 12,
+            lineHeight: 1.6,
+            margin: "14px 0 4px",
+          }}
+        >
+          {payError}
+        </div>
+      )}
+      <div style={{ display: "flex", gap: 12, marginTop: 14, flexWrap: "wrap" }}>
+        <button
+          className="btn-ghost"
+          onClick={onBack}
+          disabled={processing}
+          style={{ padding: "11px 20px" }}
+        >
           ← Back
         </button>
-        <button className="btn-primary" onClick={onPlace} style={{ padding: "13px 36px" }}>
-          Place Order Enquiry →
+        <button
+          className="btn-primary"
+          onClick={onPlace}
+          disabled={processing}
+          style={{ padding: "13px 36px", opacity: processing ? 0.6 : 1 }}
+        >
+          {processing
+            ? "Processing…"
+            : pay === "cod"
+              ? "Place Order →"
+              : `Pay ${fmt(advance)} Advance →`}
         </button>
       </div>
     </>
