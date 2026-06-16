@@ -20,7 +20,11 @@ export function ProductDetail({ p, pricing }: { p: ProductView; pricing: Pricing
   const imgs = p.imgs;
   const mods = p.models;
   const cm = mods[selModelIdx];
-  const catalogueUrl = p.documents[0]?.url ?? p.drawings[0] ?? "";
+  // Catalogue/documents are served through the branded stamping route; technical
+  // drawings (images) are linked directly.
+  const catalogueUrl = p.documents[0]
+    ? `/api/catalogue/${p.documents[0].id}`
+    : (p.drawings[0] ?? "");
 
   function addToCart() {
     const modelCode = mods.length > 0 ? mods[selModelIdx].code : p.name;
@@ -238,7 +242,7 @@ export function ProductDetail({ p, pricing }: { p: ProductView; pricing: Pricing
                   {p.documents.map((doc, i) => (
                     <a
                       key={`doc-${i}`}
-                      href={doc.url}
+                      href={`/api/catalogue/${doc.id}`}
                       target="_blank"
                       rel="noreferrer"
                       style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", background: "var(--cream2)", border: "1px solid var(--cream3)", borderRadius: 4, textDecoration: "none", color: "var(--ink)" }}

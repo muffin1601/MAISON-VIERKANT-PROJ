@@ -44,6 +44,7 @@ export interface ProductView {
   models: ModelView[];
 }
 export interface DocumentView {
+  id?: string; // present for persisted documents (absent for in-flight PDF imports)
   url: string;
   filename: string;
   kind: string;
@@ -168,6 +169,7 @@ export async function getProducts(): Promise<ProductView[]> {
       imgs: p.images.filter((i) => i.type !== "DRAWING").map((i) => i.url),
       drawings: p.images.filter((i) => i.type === "DRAWING").map((i) => i.url),
       documents: p.documents.map((doc) => ({
+        id: doc.id,
         url: doc.url,
         filename: doc.filename,
         kind: doc.kind,
