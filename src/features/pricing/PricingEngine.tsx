@@ -7,6 +7,7 @@ import { fmt } from "@/lib/format";
 import { showToast } from "@/lib/toast";
 import { useRouter } from "next/navigation";
 import { savePricing, applyPriceEntries } from "./actions";
+import { parsePriceList } from "./parsePriceList";
 import { FileUp } from "@/components/ui/icons";
 
 const SAMPLES: [string, number][] = [
@@ -31,37 +32,48 @@ export function PricingEngine({
   const [q, setQ] = useState("");
   const [saving, setSaving] = useState(false);
   const [uploadStatus, setUploadStatus] = useState("No file uploaded yet");
+  const [unmatched, setUnmatched] = useState<string[]>([]);
+  const [uploading, setUploading] = useState(false);
 
-  /** Parse a CSV of `code,eur` rows (header optional) and bulk-apply prices. */
+  /**
+   * Read an uploaded Excel (.xlsx/.xls) or CSV price list — with MODEL + PRICE_EUR
+   * columns (auto-detected) — and apply each EUR price to the matching model code.
+   */
   async function onUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    setUploadStatus("Reading CSV…");
+    setUnmatched([]);
+    setUploading(true);
+    setUploadStatus(`Reading ${file.name}…`);
     try {
-      const text = await file.text();
-      const entries: { code: string; eur: number }[] = [];
-      for (const line of text.split(/\r?\n/)) {
-        const cols = line.split(/[,;\t]/).map((s) => s.trim().replace(/^"|"$/g, ""));
-        if (cols.length < 2) continue;
-        const code = cols[0];
-        const eur = parseFloat(cols[1].replace(/[^0-9.]/g, ""));
-        if (!code || code.toLowerCase() === "code" || !(eur > 0)) continue; // skip header/blank
-        entries.push({ code, eur });
-      }
+      const { entries, modelHeader, priceHeader } = await parsePriceList(file);
       if (entries.length === 0) {
-        setUploadStatus("No valid rows found");
-        showToast("CSV must have rows of: code,eur");
+        setUploadStatus("No valid model/price rows found");
+        showToast("Could not find MODEL and PRICE columns. Check the file has those headers.");
         return;
       }
-      setUploadStatus(`Parsed ${entries.length} prices — applying…`);
+      const cols =
+        modelHeader && priceHeader ? ` (matched columns “${modelHeader}” → “${priceHeader}”)` : "";
+      setUploadStatus(`Parsed ${entries.length} prices${cols} — applying…`);
+
       const applied = await applyPriceEntries(entries);
-      setUploadStatus(`Updated ${applied.updated} of ${entries.length} models from ${file.name}`);
-      showToast(`Price list applied — ${applied.updated} models updated.`);
+      setUnmatched(applied.unmatched);
+
+      const missTxt = applied.unmatched.length
+        ? ` · ${applied.unmatched.length} model code${applied.unmatched.length === 1 ? "" : "s"} not found`
+        : "";
+      setUploadStatus(`Updated ${applied.updated} of ${entries.length} models from ${file.name}${missTxt}`);
+      showToast(
+        applied.unmatched.length
+          ? `Applied ${applied.updated} prices — ${applied.unmatched.length} model codes did not match any product.`
+          : `Price list applied — ${applied.updated} models updated.`,
+      );
       router.refresh();
-    } catch {
+    } catch (err) {
       setUploadStatus("Upload failed");
-      showToast("Could not read the CSV file.");
+      showToast(err instanceof Error ? err.message : "Could not read the price file.");
     } finally {
+      setUploading(false);
       e.target.value = "";
     }
   }
@@ -153,23 +165,62 @@ export function PricingEngine({
         <div style={{ display: "flex", alignItems: "flex-start", gap: 20, flexWrap: "wrap" }}>
           <div style={{ flex: 1, minWidth: 220 }}>
             <div className="a-sec" style={{ marginBottom: 4, display: "flex", alignItems: "center", gap: 8 }}>
-              <FileUp size={15} strokeWidth={1.5} style={{ color: "var(--gold)" }} /> Bulk Update EUR Prices (CSV)
+              <FileUp size={15} strokeWidth={1.5} style={{ color: "var(--gold)" }} /> Bulk Update EUR Prices (Excel / CSV)
             </div>
             <div style={{ fontSize: 11, color: "var(--ink4)", lineHeight: 1.7, marginBottom: 12 }}>
-              Upload a CSV with one row per model: <code style={{ fontSize: 11 }}>code,eur</code> (e.g.{" "}
-              <code style={{ fontSize: 11 }}>ARON80,2983</code>). Matching products/variants update
-              instantly across the whole site. A header row is optional.
+              Upload an Excel (<code style={{ fontSize: 11 }}>.xlsx</code>) or{" "}
+              <code style={{ fontSize: 11 }}>.csv</code> file with a{" "}
+              <code style={{ fontSize: 11 }}>MODEL</code> column and a{" "}
+              <code style={{ fontSize: 11 }}>PRICE_EUR</code> column (e.g.{" "}
+              <code style={{ fontSize: 11 }}>A40 · 116</code>). Each price is applied to the matching
+              model number instantly across the whole site. Any model codes not found in the
+              catalogue are listed below so you can correct them.
             </div>
             <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
               <label
                 className="a-btn-g"
-                style={{ width: "auto", padding: "9px 18px", margin: 0, cursor: canManage ? "pointer" : "not-allowed" }}
+                style={{
+                  width: "auto",
+                  padding: "9px 18px",
+                  margin: 0,
+                  cursor: canManage && !uploading ? "pointer" : "not-allowed",
+                  opacity: uploading ? 0.6 : 1,
+                }}
               >
-                Upload Price CSV
-                <input type="file" accept=".csv,text/csv" style={{ display: "none" }} disabled={!canManage} onChange={onUpload} />
+                {uploading ? "Working…" : "Upload Price File"}
+                <input
+                  type="file"
+                  accept=".xlsx,.xls,.xlsm,.csv,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
+                  style={{ display: "none" }}
+                  disabled={!canManage || uploading}
+                  onChange={onUpload}
+                />
               </label>
               <div style={{ fontSize: 11, color: "var(--ink4)" }}>{uploadStatus}</div>
             </div>
+            {unmatched.length > 0 && (
+              <div
+                style={{
+                  marginTop: 12,
+                  background: "#fbf3e6",
+                  border: "1px solid #e6d3a8",
+                  borderRadius: 4,
+                  padding: "10px 13px",
+                  fontSize: 11,
+                  color: "var(--ink3)",
+                  lineHeight: 1.7,
+                }}
+              >
+                <strong style={{ color: "var(--ink)" }}>
+                  {unmatched.length} model code{unmatched.length === 1 ? "" : "s"} not found
+                </strong>{" "}
+                — these prices were skipped because no product/variant has that exact code. Check the
+                spelling against the live price list below:
+                <div style={{ marginTop: 6, fontFamily: "monospace", wordBreak: "break-word" }}>
+                  {unmatched.join(", ")}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

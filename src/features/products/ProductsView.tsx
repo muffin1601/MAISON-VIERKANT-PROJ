@@ -23,17 +23,31 @@ export function ProductsView({
   const [creating, setCreating] = useState(false);
   const editorOpen = creating || editing !== null;
 
-  const list = useMemo(
-    () =>
-      products.filter(
-        (p) =>
-          (!q ||
-            p.name.toLowerCase().includes(q.toLowerCase()) ||
-            p.series.toLowerCase().includes(q.toLowerCase())) &&
-          (!cat || p.series === cat),
-      ),
-    [products, q, cat],
-  );
+  const list = useMemo(() => {
+    const needle = q.trim().toLowerCase();
+    // Loose form: ignore spaces / . _ - so "ah 130", "ah-130" all find model AH130.
+    const loose = needle.replace(/[\s._-]/g, "");
+    const looseOf = (s: string) => s.toLowerCase().replace(/[\s._-]/g, "");
+    return products.filter((p) => {
+      if (cat && p.series !== cat) return false;
+      if (!needle) return true;
+      if (
+        p.name.toLowerCase().includes(needle) ||
+        p.series.toLowerCase().includes(needle) ||
+        looseOf(p.name).includes(loose) ||
+        looseOf(p.series).includes(loose)
+      ) {
+        return true;
+      }
+      // Match any model/variant code or its dimensions within the product.
+      return p.models.some(
+        (m) =>
+          m.code.toLowerCase().includes(needle) ||
+          looseOf(m.code).includes(loose) ||
+          (m.dims ? m.dims.toLowerCase().includes(needle) : false),
+      );
+    });
+  }, [products, q, cat]);
 
   return (
     <>
@@ -67,11 +81,26 @@ export function ProductsView({
         </button>
       </div>
 
-      <div
-        id="pm-grid"
-        style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(270px,1fr))", gap: 14 }}
-      >
-        {list.map((p) => (
+      {q.trim() && (
+        <div style={{ fontSize: 11, color: "var(--ink4)", marginBottom: 10 }}>
+          {list.length} product{list.length === 1 ? "" : "s"} match “{q.trim()}”
+        </div>
+      )}
+
+      {list.length === 0 ? (
+        <div
+          className="a-card"
+          style={{ textAlign: "center", padding: 40, color: "var(--ink4)", fontSize: 13 }}
+        >
+          No products or models match “{q.trim()}”. Try a series (e.g. AH), a model code (e.g.
+          AH130), or clear the filter.
+        </div>
+      ) : (
+        <div
+          id="pm-grid"
+          style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(270px,1fr))", gap: 14 }}
+        >
+          {list.map((p) => (
           <div
             key={p.id}
             className="a-card"
@@ -115,8 +144,9 @@ export function ProductsView({
               </div>
             </div>
           </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       {editorOpen && (
         <ProductEditor

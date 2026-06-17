@@ -11,32 +11,104 @@ export interface PriceEntryInput {
   eur: number;
 }
 
-/** Apply extracted/CSV EUR prices to matching variants & products. */
+export interface ApplyPriceResult {
+  updated: number;
+  /** Model codes from the file that matched no variant or product (price NOT applied). */
+  unmatched: string[];
+}
+
+/**
+ * Normalise a model code for tolerant matching. Handles the real-world mismatches
+ * between an uploaded price list and the (historically messy) catalogue codes:
+ *  - case differences            A40 ⇄ a40
+ *  - parenthetical descriptors   "AS60 (Felix)" ⇄ "AS60",  "ASL (bronze)" ⇄ "ASL"
+ *  - asterisk footnote markers   "BR80*" ⇄ "BR80"
+ *  - spaces / . _ - separators   "ADAMAS 60" ⇄ "ADAMAS60",  "KH3-60" ⇄ "KH360"
+ */
+function normCode(code: string): string {
+  return code
+    .toUpperCase()
+    .replace(/\([^)]*\)/g, "") // drop "(Felix)", "(2colors)", "(Cognac)" …
+    .replace(/\*/g, "") // drop footnote asterisks
+    .replace(/[\s._-]/g, "") // drop spaces and separators
+    .trim();
+}
+
+/**
+ * Apply uploaded EUR prices to the matching model. Each row's `code` is matched
+ * against `ProductVariant.code` first (the model number, e.g. A40), then `Product.code`
+ * (series-level). Matching is exact first, then tolerant of case and spacing
+ * (so `ADAMAS60` matches a stored `ADAMAS 60`). Codes that match nothing — or that are
+ * ambiguous under normalisation — are returned in `unmatched` so the admin can see
+ * exactly which prices did not land. Reads the catalogue once, then writes in a batch.
+ */
 export async function applyPriceEntries(
   entries: PriceEntryInput[],
-): Promise<{ updated: number }> {
+): Promise<ApplyPriceResult> {
   const user = await requirePermission("pricing.manage");
-  let updated = 0;
+
+  const [variants, products] = await Promise.all([
+    prisma.productVariant.findMany({ select: { id: true, code: true } }),
+    prisma.product.findMany({ select: { id: true, code: true } }),
+  ]);
+
+  // Exact lookup maps.
+  const variantByCode = new Map(variants.map((v) => [v.code, v.id]));
+  const productByCode = new Map(products.map((p) => [p.code, p.id]));
+
+  // Normalised maps (null = ambiguous: >1 record normalises to the same key → don't guess).
+  const variantByNorm = new Map<string, string | null>();
+  for (const v of variants) {
+    const k = normCode(v.code);
+    variantByNorm.set(k, variantByNorm.has(k) ? null : v.id);
+  }
+  const productByNorm = new Map<string, string | null>();
+  for (const p of products) {
+    const k = normCode(p.code);
+    productByNorm.set(k, productByNorm.has(k) ? null : p.id);
+  }
+
+  const variantUpdates: { id: string; eur: number }[] = [];
+  const productUpdates: { id: string; eur: number }[] = [];
+  const unmatched: string[] = [];
+
   for (const e of entries) {
-    if (!e.code || !(e.eur > 0)) continue;
-    const variant = await prisma.productVariant.findUnique({ where: { code: e.code } });
-    if (variant) {
-      await prisma.productVariant.update({ where: { id: variant.id }, data: { eurPrice: e.eur } });
-      updated++;
+    const code = e.code?.trim();
+    if (!code || !(e.eur > 0)) continue;
+
+    const vId = variantByCode.get(code) ?? (variantByNorm.get(normCode(code)) || undefined);
+    if (vId) {
+      variantUpdates.push({ id: vId, eur: e.eur });
       continue;
     }
-    const product = await prisma.product.findUnique({ where: { code: e.code } });
-    if (product) {
-      await prisma.product.update({ where: { id: product.id }, data: { eurPrice: e.eur } });
-      updated++;
+    const pId = productByCode.get(code) ?? (productByNorm.get(normCode(code)) || undefined);
+    if (pId) {
+      productUpdates.push({ id: pId, eur: e.eur });
+      continue;
     }
+    unmatched.push(code);
   }
+
+  const updated = variantUpdates.length + productUpdates.length;
   if (updated) {
-    await recordAudit({ actorId: user.id, action: "pricing.applyEntries", entity: "ProductVariant", after: { updated } });
+    await prisma.$transaction([
+      ...variantUpdates.map((u) =>
+        prisma.productVariant.update({ where: { id: u.id }, data: { eurPrice: u.eur } }),
+      ),
+      ...productUpdates.map((u) =>
+        prisma.product.update({ where: { id: u.id }, data: { eurPrice: u.eur } }),
+      ),
+    ]);
+    await recordAudit({
+      actorId: user.id,
+      action: "pricing.applyEntries",
+      entity: "ProductVariant",
+      after: { updated, unmatched: unmatched.length },
+    });
     revalidatePath("/admin/pricing");
     revalidatePath("/collection");
   }
-  return { updated };
+  return { updated, unmatched };
 }
 
 /** Persist the active pricing rule. Updates every INR price across the site. */
