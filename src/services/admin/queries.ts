@@ -48,6 +48,7 @@ export async function getDashboard() {
 export async function getLeads() {
   const leads = await prisma.lead.findMany({ orderBy: { createdAt: "desc" } });
   return leads.map((l) => ({
+    id: l.id,
     date: l.createdAt.toISOString().slice(0, 10),
     name: l.name,
     email: l.email ?? "—",

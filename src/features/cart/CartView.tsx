@@ -92,9 +92,21 @@ export function CartView({ priceMap }: { priceMap: PriceMap }) {
                     {fmt(info.unit * i.qty)}
                   </div>
                   <div className="qty-ctrl">
-                    <button onClick={() => setQty(i.id, i.finish, i.code, i.qty - 1)}>&#8722;</button>
-                    <span className="qty-val">{i.qty}</span>
-                    <button onClick={() => setQty(i.id, i.finish, i.code, i.qty + 1)}>+</button>
+                    <button
+                      aria-label={`Decrease quantity of ${label}`}
+                      onClick={() => setQty(i.id, i.finish, i.code, i.qty - 1)}
+                    >
+                      &#8722;
+                    </button>
+                    <span className="qty-val" aria-live="polite">
+                      {i.qty}
+                    </span>
+                    <button
+                      aria-label={`Increase quantity of ${label}`}
+                      onClick={() => setQty(i.id, i.finish, i.code, Math.min(999, i.qty + 1))}
+                    >
+                      +
+                    </button>
                   </div>
                   <button
                     style={{

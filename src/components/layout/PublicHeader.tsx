@@ -56,8 +56,12 @@ export function PublicHeader() {
               {l.label}
             </Link>
           ))}
-          <Link href="/cart" className="cart-btn">
-            &#9679;
+          <Link
+            href="/cart"
+            className="cart-btn"
+            aria-label={`Cart${count > 0 ? `, ${count} item${count === 1 ? "" : "s"}` : ", empty"}`}
+          >
+            <span aria-hidden>&#9679;</span>
             <span className={`cart-count${count > 0 ? "" : " hidden"}`}>{count}</span>
           </Link>
           <Link
