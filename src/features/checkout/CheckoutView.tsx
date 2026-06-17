@@ -8,7 +8,7 @@ import { showToast } from "@/lib/toast";
 import { loadRazorpay, type RazorpaySuccess } from "@/lib/razorpay-client";
 import type { PriceMap } from "@/features/cart/CartView";
 
-const CO_STEPS = ["Your Details", "Verify Phone", "Review Order", "Payment"];
+const CO_STEPS = ["Your Details", "Review Order", "Payment"];
 const DELHI_KEYS = [
   "delhi",
   "new delhi",
@@ -49,18 +49,12 @@ export function CheckoutView({
 
   const [step, setStep] = useState(1);
   const [data, setData] = useState<CoData>({});
-  const [otpSent, setOtpSent] = useState(false);
-  const [otpCode, setOtpCode] = useState("");
-  const [otpField, setOtpField] = useState("");
-  const [otpMsg, setOtpMsg] = useState("");
-  const [verified, setVerified] = useState(false);
   const [pay, setPay] = useState<"razorpay" | "cod">("razorpay");
   const [processing, setProcessing] = useState(false);
   const [payError, setPayError] = useState("");
   const [placed, setPlaced] = useState<{
     num: string;
     name: string;
-    phone: string;
     email: string;
     method: "razorpay" | "cod";
   } | null>(null);
@@ -75,7 +69,9 @@ export function CheckoutView({
     const errs: string[] = [];
     if (!data.name?.trim()) errs.push("Full name");
     if (!data.email || !/\S+@\S+\.\S+/.test(data.email)) errs.push("Valid email");
-    if (!data.phone || data.phone.trim().length < 10) errs.push("10-digit phone");
+    // Phone is an optional contact detail (no SMS/OTP). If given, it must look valid.
+    if (data.phone && data.phone.trim().length > 0 && data.phone.trim().length < 10)
+      errs.push("valid 10-digit phone (or leave blank)");
     if (!data.addr1?.trim()) errs.push("Address");
     if (!data.city?.trim()) errs.push("City");
     if (!data.state?.trim()) errs.push("State");
@@ -84,31 +80,7 @@ export function CheckoutView({
       showToast("Please fill in: " + errs.join(", "));
       return;
     }
-    setVerified(false);
-    setOtpSent(false);
     setStep(2);
-  }
-
-  function sendOtp() {
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
-    setOtpCode(code);
-    setOtpSent(true);
-    console.log("OTP (dev/demo):", code);
-    showToast("OTP sent to +91 " + data.phone + " · (Demo: check browser console)");
-  }
-
-  function verifyOtp() {
-    if (!otpField || otpField.length < 6) {
-      setOtpMsg("Enter the 6-digit OTP");
-      return;
-    }
-    if (otpField === otpCode) {
-      setVerified(true);
-      setStep(3);
-    } else {
-      setOtpMsg("Incorrect OTP. Please try again.");
-      setOtpField("");
-    }
   }
 
   // Stable per-session order number → retrying a failed payment reuses the same
@@ -119,7 +91,6 @@ export function CheckoutView({
     setPlaced({
       num: orderNum,
       name: data.name || "",
-      phone: data.phone || "",
       email: data.email || "",
       method,
     });
@@ -253,85 +224,111 @@ export function CheckoutView({
           })}
         </div>
 
-        <div className="co-grid">
-          {/* form area */}
-          <div id="co-form">
-            {placed ? (
-              <div style={{ textAlign: "center", padding: "40px 20px" }}>
-                <div style={{ fontSize: 52, marginBottom: 16 }}>
-                  {placed.method === "cod" ? "📦" : "✅"}
-                </div>
-                <div
-                  style={{
-                    fontFamily: "'Cormorant Garamond', serif",
-                    fontSize: 28,
-                    fontWeight: 300,
-                    color: "var(--ink)",
-                    marginBottom: 8,
-                  }}
-                >
-                  {placed.method === "cod" ? "Order Confirmed" : "Payment Successful"}
-                </div>
-                <div style={{ fontSize: 13, color: "var(--ink4)", marginBottom: 6 }}>
-                  Order No: <strong style={{ color: "var(--gold)" }}>{placed.num}</strong>
-                </div>
-                <p
-                  style={{
-                    fontSize: 12,
-                    color: "var(--ink3)",
-                    lineHeight: 1.9,
-                    maxWidth: 460,
-                    margin: "16px auto",
-                  }}
-                >
-                  Thank you, <strong>{placed.name}</strong>.{" "}
-                  {placed.method === "cod"
-                    ? "Your order is confirmed. Our team will call you to arrange delivery and advance collection."
-                    : "Your 50% advance has been received and your order is confirmed."}{" "}
-                  A confirmation will be sent to <strong>+91 {placed.phone}</strong> and{" "}
-                  <strong>{placed.email}</strong>.
-                </p>
-                <p
-                  style={{
-                    fontSize: 11,
-                    color: "var(--ink4)",
-                    lineHeight: 1.8,
-                    maxWidth: 420,
-                    margin: "0 auto 24px",
-                  }}
-                >
-                  All prices are ex-Delhi inclusive of import duty and GST. Transport outside Delhi
-                  will be confirmed separately. Lead time: 10–14 weeks. Handcrafted in Ostend,
-                  Belgium.
-                </p>
-                <Link className="btn-primary" href="/" style={{ padding: "13px 32px" }}>
-                  Back to Collection
-                </Link>
-              </div>
-            ) : step === 1 ? (
+        {placed ? (
+          <div
+            className="co-success"
+            style={{
+              maxWidth: 540,
+              margin: "0 auto",
+              textAlign: "center",
+              padding: "20px 20px 16px",
+            }}
+          >
+            <div
+              aria-hidden
+              style={{
+                width: 76,
+                height: 76,
+                borderRadius: "50%",
+                margin: "0 auto 22px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                background: placed.method === "cod" ? "var(--cream2)" : "rgba(154,122,58,.10)",
+                border: "1.5px solid var(--gold)",
+              }}
+            >
+              <svg
+                width="34"
+                height="34"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="var(--gold)"
+                strokeWidth="1.6"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                {placed.method === "cod" ? (
+                  <>
+                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+                    <path d="m3.3 7 8.7 5 8.7-5" />
+                    <path d="M12 22V12" />
+                  </>
+                ) : (
+                  <path d="M20 6 9 17l-5-5" />
+                )}
+              </svg>
+            </div>
+            <div
+              style={{
+                fontFamily: "'Cormorant Garamond', serif",
+                fontSize: 30,
+                fontWeight: 300,
+                color: "var(--ink)",
+                marginBottom: 8,
+              }}
+            >
+              {placed.method === "cod" ? "Order Confirmed" : "Payment Successful"}
+            </div>
+            <div style={{ fontSize: 13, color: "var(--ink4)", marginBottom: 6 }}>
+              Order No: <strong style={{ color: "var(--gold)" }}>{placed.num}</strong>
+            </div>
+            <p
+              style={{
+                fontSize: 12.5,
+                color: "var(--ink3)",
+                lineHeight: 1.9,
+                maxWidth: 460,
+                margin: "16px auto",
+              }}
+            >
+              Thank you, <strong>{placed.name}</strong>.{" "}
+              {placed.method === "cod"
+                ? "Your order is confirmed. Our team will call you to arrange delivery and advance collection."
+                : "Your 50% advance has been received and your order is confirmed."}{" "}
+              A confirmation has been sent to <strong>{placed.email}</strong>.
+            </p>
+            <p
+              style={{
+                fontSize: 11,
+                color: "var(--ink4)",
+                lineHeight: 1.8,
+                maxWidth: 420,
+                margin: "0 auto 24px",
+              }}
+            >
+              All prices are ex-Delhi inclusive of import duty and GST. Transport outside Delhi will
+              be confirmed separately. Lead time: 10–14 weeks. Handcrafted in Ostend, Belgium.
+            </p>
+            <Link className="btn-primary" href="/" style={{ padding: "13px 32px" }}>
+              Back to Collection
+            </Link>
+          </div>
+        ) : (
+          <div className="co-grid">
+            {/* form area */}
+            <div id="co-form">
+              {step === 1 ? (
               <Step1 data={data} set={set} delhi={delhi} onNext={step1Next} />
             ) : step === 2 ? (
-              <Step2
-                phone={data.phone || ""}
-                verified={verified}
-                otpSent={otpSent}
-                otpField={otpField}
-                otpMsg={otpMsg}
-                setOtpField={setOtpField}
-                onSend={sendOtp}
-                onVerify={verifyOtp}
-                onContinue={() => setStep(3)}
-                onBack={() => setStep(1)}
-              />
-            ) : step === 3 ? (
               <Step3
                 items={items}
                 priceMap={priceMap}
                 data={data}
                 delhi={delhi}
                 addrFull={addrFull}
-                onBack={() => setStep(2)}
-                onNext={() => setStep(4)}
+                onBack={() => setStep(1)}
+                onNext={() => setStep(3)}
               />
             ) : (
               <Step4
@@ -340,7 +337,7 @@ export function CheckoutView({
                 setPay={setPay}
                 notes={data.notes || ""}
                 setNotes={(v) => set({ notes: v })}
-                onBack={() => setStep(3)}
+                onBack={() => setStep(2)}
                 onPlace={placeOrder}
                 processing={processing}
                 payError={payError}
@@ -415,7 +412,8 @@ export function CheckoutView({
               )}
             </div>
           </div>
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -470,7 +468,7 @@ function Step1({
           onChange={(e) => set({ email: e.target.value })}
         />
         <div className="co-field">
-          <label>Phone (India) *</label>
+          <label>Phone (India)</label>
           <div style={{ display: "flex", gap: 8 }}>
             <span
               style={{
@@ -545,82 +543,7 @@ function Step1({
       )}
       <div style={{ marginTop: 8 }}>
         <button className="btn-primary" onClick={onNext} style={{ padding: "13px 32px" }}>
-          Continue to Verify Phone →
-        </button>
-      </div>
-    </>
-  );
-}
-
-function Step2(props: {
-  phone: string;
-  verified: boolean;
-  otpSent: boolean;
-  otpField: string;
-  otpMsg: string;
-  setOtpField: (v: string) => void;
-  onSend: () => void;
-  onVerify: () => void;
-  onContinue: () => void;
-  onBack: () => void;
-}) {
-  if (props.verified) {
-    return (
-      <>
-        <div className="co-verified">✅ Phone +91 {props.phone} verified</div>
-        <button className="btn-primary" onClick={props.onContinue} style={{ padding: "13px 32px" }}>
           Continue to Review →
-        </button>
-      </>
-    );
-  }
-  return (
-    <>
-      <div className="co-section-title">Verify Your Phone Number</div>
-      <p style={{ fontSize: 13, color: "var(--ink3)", marginBottom: 20, lineHeight: 1.7 }}>
-        We&apos;ll send a 6-digit OTP to <strong>+91 {props.phone}</strong>
-      </p>
-      {!props.otpSent ? (
-        <button className="btn-primary" onClick={props.onSend} style={{ padding: "13px 28px" }}>
-          Send OTP to +91 {props.phone}
-        </button>
-      ) : (
-        <>
-          <p style={{ fontSize: 12, color: "var(--ink4)", marginBottom: 16 }}>
-            OTP sent to +91 {props.phone}. Check your SMS.
-          </p>
-          <div className="co-otp-wrap">
-            <input
-              className="co-otp-input"
-              maxLength={6}
-              placeholder="— — — — — —"
-              value={props.otpField}
-              onChange={(e) => props.setOtpField(e.target.value)}
-            />
-            <button className="co-verify-btn" onClick={props.onVerify}>
-              Verify
-            </button>
-          </div>
-          <div style={{ fontSize: 11, color: "var(--ink4)", marginBottom: 14 }}>{props.otpMsg}</div>
-          <button
-            style={{
-              background: "none",
-              border: "none",
-              color: "var(--gold)",
-              fontSize: 11,
-              cursor: "pointer",
-              fontFamily: "'Jost', sans-serif",
-              textDecoration: "underline",
-            }}
-            onClick={props.onSend}
-          >
-            Resend OTP
-          </button>
-        </>
-      )}
-      <div style={{ marginTop: 24 }}>
-        <button className="btn-ghost" onClick={props.onBack} style={{ padding: "10px 20px" }}>
-          ← Back
         </button>
       </div>
     </>

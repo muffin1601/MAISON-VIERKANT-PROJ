@@ -60,6 +60,12 @@ export function PublicHeader() {
             &#9679;
             <span className={`cart-count${count > 0 ? "" : " hidden"}`}>{count}</span>
           </Link>
+          <Link
+            href="/account"
+            className={`nav-btn${pathname.startsWith("/account") ? " active" : ""}`}
+          >
+            Account
+          </Link>
           <Link href="/login" className="admin-toggle">
             Admin
           </Link>

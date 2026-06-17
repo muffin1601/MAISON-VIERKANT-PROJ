@@ -587,3 +587,79 @@ ALTER TABLE "PriceOverride" ADD CONSTRAINT "PriceOverride_sourceFileId_fkey" FOR
 -- AddForeignKey
 ALTER TABLE "AuditLog" ADD CONSTRAINT "AuditLog_actorId_fkey" FOREIGN KEY ("actorId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
+-- ============================================================================
+-- Incremental migrations folded into the bootstrap snapshot (idempotent).
+-- Mirrors prisma/migrations/* so a fresh Supabase project matches the running app.
+-- ============================================================================
+
+-- 20260613_product_documents -------------------------------------------------
+ALTER TABLE "Product" ADD COLUMN IF NOT EXISTS "featured" BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE "Product" ADD COLUMN IF NOT EXISTS "seoTitle" TEXT;
+ALTER TABLE "Product" ADD COLUMN IF NOT EXISTS "seoDescription" TEXT;
+ALTER TABLE "UploadedFile" ADD COLUMN IF NOT EXISTS "storageKey" TEXT;
+ALTER TABLE "UploadedFile" ADD COLUMN IF NOT EXISTS "bucket" TEXT;
+ALTER TABLE "UploadedFile" ADD COLUMN IF NOT EXISTS "mimeType" TEXT;
+ALTER TABLE "UploadedFile" ADD COLUMN IF NOT EXISTS "sizeBytes" INTEGER;
+
+CREATE TABLE IF NOT EXISTS "ProductDocument" (
+  "id"         TEXT NOT NULL,
+  "productId"  TEXT NOT NULL,
+  "kind"       TEXT NOT NULL DEFAULT 'DOCUMENT',
+  "url"        TEXT NOT NULL,
+  "storageKey" TEXT,
+  "bucket"     TEXT,
+  "filename"   TEXT NOT NULL,
+  "mimeType"   TEXT,
+  "sizeBytes"  INTEGER,
+  "sort"       INTEGER NOT NULL DEFAULT 0,
+  "uploaderId" TEXT,
+  "createdAt"  TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT "ProductDocument_pkey" PRIMARY KEY ("id")
+);
+CREATE INDEX IF NOT EXISTS "ProductDocument_productId_idx" ON "ProductDocument"("productId");
+DO $$ BEGIN
+  ALTER TABLE "ProductDocument" ADD CONSTRAINT "ProductDocument_productId_fkey"
+    FOREIGN KEY ("productId") REFERENCES "Product"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+CREATE INDEX IF NOT EXISTS "Product_status_idx" ON "Product"("status");
+CREATE INDEX IF NOT EXISTS "Product_featured_idx" ON "Product"("featured");
+CREATE INDEX IF NOT EXISTS "Lead_status_idx" ON "Lead"("status");
+CREATE INDEX IF NOT EXISTS "Order_status_idx" ON "Order"("status");
+CREATE INDEX IF NOT EXISTS "Quote_status_idx" ON "Quote"("status");
+
+-- 20260615_pricing_sws --------------------------------------------------------
+ALTER TABLE "PricingRule" ADD COLUMN IF NOT EXISTS "swsPct" DECIMAL(5,2) NOT NULL DEFAULT 0;
+
+-- 20260616_payment_gateway ----------------------------------------------------
+ALTER TABLE "Payment" ADD COLUMN IF NOT EXISTS "method" TEXT;
+ALTER TABLE "Payment" ADD COLUMN IF NOT EXISTS "gatewayOrderId" TEXT;
+ALTER TABLE "Payment" ADD COLUMN IF NOT EXISTS "gatewayPaymentId" TEXT;
+ALTER TABLE "Payment" ADD COLUMN IF NOT EXISTS "signature" TEXT;
+ALTER TABLE "Payment" ADD COLUMN IF NOT EXISTS "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;
+CREATE UNIQUE INDEX IF NOT EXISTS "Payment_gatewayOrderId_key" ON "Payment"("gatewayOrderId");
+CREATE UNIQUE INDEX IF NOT EXISTS "Payment_gatewayPaymentId_key" ON "Payment"("gatewayPaymentId");
+
+-- 20260617_customer_accounts --------------------------------------------------
+ALTER TABLE "Customer" ADD COLUMN IF NOT EXISTS "userId" TEXT;
+CREATE UNIQUE INDEX IF NOT EXISTS "Customer_userId_key" ON "Customer"("userId");
+DO $$ BEGIN
+  ALTER TABLE "Customer" ADD CONSTRAINT "Customer_userId_fkey"
+    FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+CREATE TABLE IF NOT EXISTS "PasswordResetToken" (
+  "id"        TEXT NOT NULL,
+  "userId"    TEXT NOT NULL,
+  "tokenHash" TEXT NOT NULL,
+  "expiresAt" TIMESTAMP(3) NOT NULL,
+  "usedAt"    TIMESTAMP(3),
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT "PasswordResetToken_pkey" PRIMARY KEY ("id")
+);
+CREATE UNIQUE INDEX IF NOT EXISTS "PasswordResetToken_tokenHash_key" ON "PasswordResetToken"("tokenHash");
+CREATE INDEX IF NOT EXISTS "PasswordResetToken_userId_idx" ON "PasswordResetToken"("userId");
+DO $$ BEGIN
+  ALTER TABLE "PasswordResetToken" ADD CONSTRAINT "PasswordResetToken_userId_fkey"
+    FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+

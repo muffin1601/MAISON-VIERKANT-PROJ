@@ -5,6 +5,9 @@ import { env, razorpayReady } from "@/lib/env";
 import { getActivePricing } from "@/services/catalogue/catalogue";
 import { calcBreakdown } from "@/services/pricing/PricingService";
 import { createRazorpayOrder } from "@/services/payments/razorpay";
+import { getCurrentUser } from "@/lib/auth/session";
+import { sendOrderConfirmation } from "@/services/orders/notify";
+import { rateLimit, clientIp } from "@/lib/rate-limit";
 
 const orderSchema = z.object({
   number: z.string().min(1),
@@ -47,6 +50,14 @@ const orderSchema = z.object({
  *    webhook), never here.
  */
 export async function POST(req: Request) {
+  const rl = rateLimit(`checkout:${clientIp(req)}`, 20, 10 * 60 * 1000); // 20 / 10 min / IP
+  if (!rl.ok) {
+    return NextResponse.json(
+      { error: { message: "Too many checkout attempts. Please try again shortly." } },
+      { status: 429, headers: { "Retry-After": String(rl.retryAfterSec) } },
+    );
+  }
+
   let body: unknown;
   try {
     body = await req.json();
@@ -153,26 +164,46 @@ export async function POST(req: Request) {
     const subtotalInr = totalInr - gstInr;
     const advanceInr = Math.round(totalInr * 0.5); // 50% advance secures the order
 
-    const cust = await prisma.customer.create({
-      data: {
-        name: customer.name,
-        email: customer.email || null,
-        phone: customer.phone || null,
-        company: customer.company || null,
-        addresses: customer.addr1
-          ? {
-              create: {
-                type: "SHIPPING",
-                line1: customer.addr1,
-                line2: customer.addr2 || null,
-                city: customer.city,
-                state: customer.state,
-                pincode: customer.pin,
-              },
-            }
-          : undefined,
-      },
-    });
+    // Attach the order to the signed-in customer's CRM record when available, so it
+    // appears in their dashboard; otherwise create a fresh guest Customer.
+    const sessionUser = await getCurrentUser();
+    const linkedCustomer =
+      sessionUser?.role === "CUSTOMER"
+        ? await prisma.customer.findUnique({ where: { userId: sessionUser.id } })
+        : null;
+
+    const addressCreate = customer.addr1
+      ? {
+          create: {
+            type: "SHIPPING" as const,
+            line1: customer.addr1,
+            line2: customer.addr2 || null,
+            city: customer.city,
+            state: customer.state,
+            pincode: customer.pin,
+          },
+        }
+      : undefined;
+
+    const cust = linkedCustomer
+      ? await prisma.customer.update({
+          where: { id: linkedCustomer.id },
+          data: {
+            // keep CRM contact details fresh from checkout, fill only when missing
+            phone: linkedCustomer.phone ?? customer.phone ?? null,
+            company: linkedCustomer.company ?? customer.company ?? null,
+            ...(addressCreate ? { addresses: addressCreate } : {}),
+          },
+        })
+      : await prisma.customer.create({
+          data: {
+            name: customer.name,
+            email: customer.email || null,
+            phone: customer.phone || null,
+            company: customer.company || null,
+            ...(addressCreate ? { addresses: addressCreate } : {}),
+          },
+        });
 
     // For COD nothing is charged online; for online we charge the 50% advance.
     const useRazorpay = paymentMethod === "razorpay" && razorpayReady;
@@ -205,6 +236,7 @@ export async function POST(req: Request) {
         }),
         prisma.order.update({ where: { id: order.id }, data: { status: "CONFIRMED" } }),
       ]);
+      await sendOrderConfirmation(order.id, "cod");
       return NextResponse.json(
         {
           data: {
@@ -267,6 +299,7 @@ export async function POST(req: Request) {
       }),
       prisma.order.update({ where: { id: order.id }, data: { status: "CONFIRMED" } }),
     ]);
+    await sendOrderConfirmation(order.id, "mock");
     return NextResponse.json(
       {
         data: {

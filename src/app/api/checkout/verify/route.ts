@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { verifyPaymentSignature } from "@/services/payments/razorpay";
+import { sendOrderConfirmation } from "@/services/orders/notify";
 
 const verifySchema = z.object({
   gatewayOrderId: z.string().min(1), // razorpay_order_id
@@ -59,6 +60,8 @@ export async function POST(req: Request) {
       }),
       prisma.order.update({ where: { id: payment.orderId }, data: { status: "CONFIRMED" } }),
     ]);
+    // Genuine PENDING→CAPTURED transition → email the customer once.
+    await sendOrderConfirmation(payment.orderId, "razorpay");
   } catch (err) {
     // gatewayPaymentId already used elsewhere → reject the replay.
     if (err && typeof err === "object" && "code" in err && err.code === "P2002") {

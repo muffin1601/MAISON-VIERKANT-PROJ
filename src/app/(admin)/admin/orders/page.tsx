@@ -2,6 +2,7 @@ import { getCurrentUser } from "@/lib/auth/session";
 import { hasPermission } from "@/lib/auth/rbac";
 import { getOrders } from "@/services/admin/queries";
 import { fmt } from "@/lib/format";
+import { OrderStatusSelect } from "@/features/orders/OrderStatusSelect";
 
 export const dynamic = "force-dynamic";
 
@@ -18,6 +19,7 @@ export default async function OrdersPage() {
   }
 
   const orders = await getOrders();
+  const canWrite = hasPermission(user.permissions, "orders.write");
 
   return (
     <div className="a-page active">
@@ -46,7 +48,7 @@ export default async function OrdersPage() {
                   {fmt(o.total)}
                 </td>
                 <td>
-                  <span className={`sbadge s-${o.status}`}>{o.status}</span>
+                  <OrderStatusSelect number={o.id} status={o.status} canWrite={canWrite} />
                 </td>
               </tr>
             ))}

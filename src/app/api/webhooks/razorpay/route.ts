@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyWebhookSignature } from "@/services/payments/razorpay";
+import { sendOrderConfirmation } from "@/services/orders/notify";
 
 /**
  * Razorpay webhook — the authoritative, out-of-band confirmation of payment
@@ -54,8 +55,10 @@ export async function POST(req: Request) {
         }),
         prisma.order.update({ where: { id: payment.orderId }, data: { status: "CONFIRMED" } }),
       ]);
+      // This webhook won the capture race → it owns sending the confirmation email.
+      await sendOrderConfirmation(payment.orderId, "razorpay");
     } catch (err) {
-      // Concurrent verify() already captured it → fine, idempotent.
+      // Concurrent verify() already captured it → fine, idempotent (it sent the email).
       if (!(err && typeof err === "object" && "code" in err && err.code === "P2002")) throw err;
     }
   } else if (event.event === "payment.failed" && payment.status === "PENDING") {

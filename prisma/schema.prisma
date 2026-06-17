@@ -23,8 +23,22 @@ model User {
   isActive      Boolean    @default(true)
   lastLoginAt   DateTime?
   auditLogs     AuditLog[]
+  customer      Customer?  // CRM record for storefront customers (role CUSTOMER)
+  resetTokens   PasswordResetToken[]
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
+}
+
+/** One-time, hashed password-reset tokens (email-based; no SMS). */
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String   @unique // sha256 of the token sent by email
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+  @@index([userId])
 }
 
 model Role {
@@ -199,6 +213,8 @@ model Customer {
   company   String?
   leadId    String?        @unique
   lead      Lead?          @relation(fields: [leadId], references: [id])
+  userId    String?        @unique // linked auth account (storefront login)
+  user      User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
   addresses Address[]
   orders    Order[]
   quotes    Quote[]
