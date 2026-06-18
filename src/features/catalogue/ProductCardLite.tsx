@@ -12,10 +12,6 @@ export function ProductCardLite({ p }: { p: CardData }) {
       <div className="pc-img">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img className="pc-img-base" src={p.img} alt={p.name} loading="lazy" />
-        {p.imgHover && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img className="pc-img-hover" src={p.imgHover} alt="" aria-hidden loading="lazy" />
-        )}
         {p.soldOut && <span className="pc-badge">Sold out</span>}
         <WishlistButton slug={p.slug} name={p.name} className="pc-wish" />
       </div>

@@ -92,8 +92,16 @@ export function PublicFooter() {
         </nav>
         <div className="f-bottom">
           <span>
-            © 2026 Maison Vierkant India — Watcon Pvt. Ltd. · 343 Sultanpur, MG Road, New Delhi
-            110030
+            © 2026 Maison Vierkant India — Watcon International · 343, Sultanpur, MG Road,
+            Pin-110030 · Next to Pillar No. 28B · Landmark: beside CJ Living showroom ·{" "}
+            <a
+              className="f-map-link"
+              href="https://www.google.com/maps/search/?api=1&query=Watcon+International%2C+343+Sultanpur%2C+MG+Road%2C+110030"
+              target="_blank"
+              rel="noreferrer"
+            >
+              View on Google Maps →
+            </a>
           </span>
           {/* TODO: replace with the registered GSTIN before launch. */}
           <span>GST registration available on invoice</span>

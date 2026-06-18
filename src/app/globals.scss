@@ -449,18 +449,6 @@ summary:focus-visible {
   position: relative;
   overflow: hidden;
 }
-.pc-img-hover {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  opacity: 0;
-  transition: opacity var(--dur) var(--ease);
-}
-.pc:hover .pc-img-hover {
-  opacity: 1;
-}
 .pc-badge {
   position: absolute;
   top: var(--s3);
@@ -1493,5 +1481,80 @@ summary:focus-visible {
     flex-direction: column;
     gap: var(--s1);
     align-items: flex-end;
+  }
+}
+
+/* Contact page embedded map */
+.contact-map {
+  margin-top: var(--s7);
+  border: 1px solid var(--cream3);
+  border-radius: var(--r);
+  overflow: hidden;
+
+  iframe {
+    display: block;
+    width: 100%;
+    height: 380px;
+    border: 0;
+  }
+}
+@media (max-width: 640px) {
+  .contact-map iframe {
+    height: 280px;
+  }
+}
+
+/* Footer Google-Maps link */
+.f-map-link {
+  color: var(--gold2);
+  text-decoration: underline;
+  white-space: nowrap;
+
+  &:hover {
+    color: var(--white);
+  }
+}
+
+/* ==========================================================================
+   FINAL MOBILE POLISH — make every page comfortably usable ≤640px.
+   ========================================================================== */
+@media (max-width: 640px) {
+  /* Roomier tap target + readable wrap for the footer address line. */
+  .f-bottom span {
+    line-height: 1.7;
+  }
+  /* Legal / policy pages: tighten the generous desktop padding on phones. */
+  .legal-page {
+    padding: var(--s7) var(--s4);
+  }
+  /* Mini-cart + drawers: respect the iOS safe area at the bottom. */
+  .mc,
+  .mob-nav {
+    padding-bottom: calc(var(--s5) + env(safe-area-inset-bottom, 0px));
+  }
+  /* PDP title + wishlist: keep the heart from crowding a long name. */
+  .pd-title-row {
+    align-items: center;
+  }
+  /* Address-book cards stack to a single, full-width column. */
+  .addr-grid {
+    grid-template-columns: 1fr;
+  }
+  /* Checkout/account section headings get a touch more breathing room. */
+  .co-section-title {
+    margin-top: var(--s4);
+  }
+}
+
+/* Ensure interactive icon buttons always meet the 44px touch-target minimum
+   on touch devices without affecting the desktop visual size. */
+@media (hover: none) and (pointer: coarse) {
+  .hdr-icon,
+  .wish-btn,
+  .mc-item-remove,
+  .pd-gnav,
+  .search-close {
+    min-width: 44px;
+    min-height: 44px;
   }
 }

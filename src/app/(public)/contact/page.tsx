@@ -16,13 +16,22 @@ export default function ContactPage() {
           </div>
           <div style={{ paddingTop: 4 }}>
             <div className="ci-item">
-              <div className="ci-label">New Delhi Showroom</div>
+              <div className="ci-label">New Delhi Showroom — Watcon International</div>
               <div className="ci-val">
                 By Appointment
                 <br />
-                343 Sultanpur, MG Road
+                343, Sultanpur, MG Road, Pin-110030
                 <br />
-                New Delhi 110030
+                Next to Pillar No. 28B · Beside CJ Living showroom
+                <br />
+                <a
+                  className="f-map-link"
+                  href="https://www.google.com/maps/search/?api=1&query=Watcon+International%2C+343+Sultanpur%2C+MG+Road%2C+110030"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  View on Google Maps →
+                </a>
               </div>
             </div>
             <div className="ci-item">
@@ -46,6 +55,17 @@ export default function ContactPage() {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Embedded location map (no API key — standard Google Maps embed). */}
+        <div className="contact-map">
+          <iframe
+            title="Watcon International — 343 Sultanpur, MG Road, New Delhi 110030"
+            src="https://maps.google.com/maps?q=343%20Sultanpur%2C%20MG%20Road%2C%20New%20Delhi%20110030&z=16&output=embed"
+            loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
+            allowFullScreen
+          />
         </div>
       </div>
     </div>

@@ -75,9 +75,16 @@ export function CollectionBrowser({
       return true;
     });
     const num = (n: number | null) => (n === null ? Infinity : n);
+    // Trim + natural, case-insensitive compare so leading whitespace / mixed case
+    // can't push entries (e.g. "GR Series") out of their true alphabetical slot.
+    const byName = (a: CardData, b: CardData) =>
+      (a.name || "").trim().localeCompare((b.name || "").trim(), "en", {
+        numeric: true,
+        sensitivity: "base",
+      });
     switch (sort) {
       case "alpha":
-        out.sort((a, b) => a.name.localeCompare(b.name));
+        out.sort(byName);
         break;
       case "price-asc":
         out.sort((a, b) => num(a.minINR) - num(b.minINR));
