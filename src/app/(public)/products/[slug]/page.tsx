@@ -1,7 +1,8 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { getProductBySlug, getActivePricing } from "@/services/catalogue/catalogue";
+import { getProductBySlug, getProducts, getActivePricing } from "@/services/catalogue/catalogue";
 import { ProductDetail } from "@/features/catalogue/ProductDetail";
+import { toCardData } from "@/features/catalogue/cardData";
 
 export const dynamic = "force-dynamic";
 
@@ -22,7 +23,18 @@ export async function generateMetadata({
 
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const [p, pricing] = await Promise.all([getProductBySlug(slug), getActivePricing()]);
+  const [p, products, pricing] = await Promise.all([
+    getProductBySlug(slug),
+    getProducts(),
+    getActivePricing(),
+  ]);
   if (!p) notFound();
-  return <ProductDetail p={p} pricing={pricing} />;
+
+  const all = toCardData(products, pricing);
+  // Related = same series first, then fill from the rest of the catalogue.
+  const sameSeries = all.filter((c) => c.series === p.series && c.slug !== p.slug);
+  const others = all.filter((c) => c.series !== p.series && c.slug !== p.slug);
+  const related = [...sameSeries, ...others].slice(0, 4);
+
+  return <ProductDetail p={p} pricing={pricing} related={related} all={all} />;
 }

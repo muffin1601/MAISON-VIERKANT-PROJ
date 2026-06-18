@@ -1,7 +1,25 @@
 import type { Metadata } from "next";
+import { Cormorant_Garamond, Jost } from "next/font/google";
 import { Providers } from "./providers";
 import "@/styles/prototype.css";
 import "./globals.scss";
+
+// Self-hosted via next/font — eliminates the render-blocking Google <link> and
+// the associated CLS, while preserving the EXACT prototype typefaces. Exposed as
+// CSS variables that prototype.css now references (with the literal name as fallback).
+const cormorant = Cormorant_Garamond({
+  subsets: ["latin"],
+  weight: ["300", "400", "500"],
+  style: ["normal", "italic"],
+  variable: "--font-cormorant",
+  display: "swap",
+});
+const jost = Jost({
+  subsets: ["latin"],
+  weight: ["200", "300", "400", "500"],
+  variable: "--font-jost",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXTAUTH_URL || "http://localhost:3000"),
@@ -32,17 +50,11 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <head>
-        {/* Exact prototype fonts */}
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        {/* eslint-disable-next-line @next/next/no-page-custom-font -- prototype-exact font loading, applied site-wide via globals */}
-        <link
-          href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Jost:wght@200;300;400;500&display=swap"
-          rel="stylesheet"
-        />
-      </head>
+    <html
+      lang="en"
+      className={`${cormorant.variable} ${jost.variable}`}
+      suppressHydrationWarning
+    >
       <body suppressHydrationWarning>
         <Providers>{children}</Providers>
       </body>

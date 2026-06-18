@@ -1,6 +1,5 @@
-import Link from "next/link";
-import { getProducts, getActivePricing } from "@/services/catalogue/catalogue";
-import { ProductCard } from "@/features/catalogue/ProductCard";
+import { getProducts, getActivePricing, cardPrice, cardMinINR } from "@/services/catalogue/catalogue";
+import { CollectionBrowser, type CardData } from "@/features/catalogue/CollectionBrowser";
 
 export const dynamic = "force-dynamic";
 
@@ -12,9 +11,21 @@ export default async function CollectionPage({
   const { series } = await searchParams;
   const [products, pricing] = await Promise.all([getProducts(), getActivePricing()]);
 
-  const cats = [...new Set(products.map((p) => p.series))].sort();
-  const active = series && cats.includes(series) ? series : null;
-  const shown = active ? products.filter((p) => p.series === active) : products;
+  // Precompute client-safe card data (keeps prisma + pricing engine on the server).
+  const items: CardData[] = products.map((p) => ({
+    slug: p.slug,
+    name: p.name,
+    series: p.series,
+    finishes: p.finishes,
+    status: p.status,
+    featured: p.featured,
+    sizes: p.models.length,
+    priceStr: cardPrice(p, pricing),
+    minINR: cardMinINR(p, pricing),
+    img: p.imgs[0],
+    imgHover: p.imgs[1],
+    soldOut: ["sold_out", "out"].includes(p.status?.toLowerCase()),
+  }));
 
   return (
     <div id="page-shop" className="page active">
@@ -43,28 +54,7 @@ export default async function CollectionPage({
         </div>
       </div>
       <div className="sw" style={{ paddingTop: 44 }}>
-        <div className="filter-row" id="filter-row">
-          <Link href="/collection" className={`fb${active ? "" : " active"}`}>
-            All <span style={{ fontSize: 9, opacity: 0.6 }}>({products.length})</span>
-          </Link>
-          {cats.map((c) => {
-            const n = products.filter((p) => p.series === c).length;
-            return (
-              <Link
-                key={c}
-                href={`/collection?series=${encodeURIComponent(c)}`}
-                className={`fb${active === c ? " active" : ""}`}
-              >
-                {c} <span style={{ fontSize: 9, opacity: 0.6 }}>({n})</span>
-              </Link>
-            );
-          })}
-        </div>
-        <div className="pg" id="shop-products">
-          {shown.map((p) => (
-            <ProductCard key={p.id} p={p} pricing={pricing} />
-          ))}
-        </div>
+        <CollectionBrowser items={items} initialSeries={series} />
       </div>
     </div>
   );

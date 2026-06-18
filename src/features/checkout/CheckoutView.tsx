@@ -1,12 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { ShieldCheck, Lock } from "lucide-react";
 import { useCart } from "@/store/cart";
+import { useAddressBook } from "@/store/address";
 import { fmt } from "@/lib/format";
 import { showToast } from "@/lib/toast";
 import { loadRazorpay, type RazorpaySuccess } from "@/lib/razorpay-client";
 import type { PriceMap } from "@/features/cart/CartView";
+
+const DRAFT_KEY = "mvi_checkout_draft";
+type Errs = Partial<Record<keyof CoData, string>>;
 
 const CO_STEPS = ["Your Details", "Review Order", "Payment"];
 const DELHI_KEYS = [
@@ -49,6 +54,9 @@ export function CheckoutView({
 
   const [step, setStep] = useState(1);
   const [data, setData] = useState<CoData>({});
+  const [errors, setErrors] = useState<Errs>({});
+  const addresses = useAddressBook((s) => s.addresses);
+  const saveAddress = useAddressBook((s) => s.add);
   const [pay, setPay] = useState<"razorpay" | "cod">("razorpay");
   const [processing, setProcessing] = useState(false);
   const [payError, setPayError] = useState("");
@@ -63,24 +71,81 @@ export function CheckoutView({
   const total = items.reduce((s, i) => s + unitOf(i.id, i.code) * i.qty, 0);
   const delhi = isDelhiZone(data.city || "", data.state || "");
 
-  const set = (patch: Partial<CoData>) => setData((d) => ({ ...d, ...patch }));
+  const set = (patch: Partial<CoData>) => {
+    setData((d) => ({ ...d, ...patch }));
+    // Clear the error for any field being edited.
+    setErrors((e) => {
+      const next = { ...e };
+      (Object.keys(patch) as (keyof CoData)[]).forEach((k) => delete next[k]);
+      return next;
+    });
+  };
+
+  // Restore an in-progress checkout draft (survives refresh / back-nav).
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY);
+      if (raw) setData(JSON.parse(raw));
+    } catch {}
+  }, []);
+  useEffect(() => {
+    try {
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(data));
+    } catch {}
+  }, [data]);
 
   function step1Next() {
-    const errs: string[] = [];
-    if (!data.name?.trim()) errs.push("Full name");
-    if (!data.email || !/\S+@\S+\.\S+/.test(data.email)) errs.push("Valid email");
-    // Phone is an optional contact detail (no SMS/OTP). If given, it must look valid.
-    if (data.phone && data.phone.trim().length > 0 && data.phone.trim().length < 10)
-      errs.push("valid 10-digit phone (or leave blank)");
-    if (!data.addr1?.trim()) errs.push("Address");
-    if (!data.city?.trim()) errs.push("City");
-    if (!data.state?.trim()) errs.push("State");
-    if (!data.pin || data.pin.trim().length < 6) errs.push("PIN code");
-    if (errs.length) {
-      showToast("Please fill in: " + errs.join(", "));
+    const e: Errs = {};
+    if (!data.name?.trim()) e.name = "Please enter your full name.";
+    if (!data.email || !/\S+@\S+\.\S+/.test(data.email)) e.email = "Enter a valid email address.";
+    // Phone is required — the fulfilment model calls every customer to confirm.
+    if (!data.phone || data.phone.replace(/\D/g, "").length < 10)
+      e.phone = "Enter a 10-digit phone number.";
+    if (!data.addr1?.trim()) e.addr1 = "Enter your address.";
+    if (!data.city?.trim()) e.city = "Enter your city.";
+    if (!data.state?.trim()) e.state = "Enter your state.";
+    if (!data.pin || data.pin.replace(/\D/g, "").length !== 6) e.pin = "Enter a 6-digit PIN code.";
+    setErrors(e);
+    if (Object.keys(e).length) {
+      showToast("Please correct the highlighted fields.");
       return;
     }
     setStep(2);
+  }
+
+  function useSavedAddress(id: string) {
+    const a = addresses.find((x) => x.id === id);
+    if (!a) return;
+    set({
+      name: a.name,
+      company: a.company,
+      phone: a.phone,
+      addr1: a.addr1,
+      addr2: a.addr2,
+      city: a.city,
+      state: a.state,
+      pin: a.pin,
+      gst: a.gst,
+    });
+  }
+  function saveCurrentAddress() {
+    if (!data.name || !data.addr1 || !data.city || !data.state || !data.pin || !data.phone) {
+      showToast("Complete the address fields before saving.");
+      return;
+    }
+    saveAddress({
+      label: data.city || "Address",
+      name: data.name,
+      company: data.company,
+      phone: data.phone,
+      addr1: data.addr1,
+      addr2: data.addr2,
+      city: data.city,
+      state: data.state,
+      pin: data.pin,
+      gst: data.gst,
+    });
+    showToast("Address saved to your address book.");
   }
 
   // Stable per-session order number → retrying a failed payment reuses the same
@@ -95,6 +160,9 @@ export function CheckoutView({
       method,
     });
     clear();
+    try {
+      localStorage.removeItem(DRAFT_KEY);
+    } catch {}
   }
 
   async function placeOrder() {
@@ -319,7 +387,16 @@ export function CheckoutView({
             {/* form area */}
             <div id="co-form">
               {step === 1 ? (
-              <Step1 data={data} set={set} delhi={delhi} onNext={step1Next} />
+              <Step1
+                data={data}
+                set={set}
+                delhi={delhi}
+                onNext={step1Next}
+                errors={errors}
+                addresses={addresses}
+                onUseSaved={useSavedAddress}
+                onSaveAddress={saveCurrentAddress}
+              />
             ) : step === 2 ? (
               <Step3
                 items={items}
@@ -421,12 +498,25 @@ export function CheckoutView({
 
 function Field({
   label,
+  error,
   ...rest
-}: { label: string } & React.InputHTMLAttributes<HTMLInputElement>) {
+}: { label: string; error?: string } & React.InputHTMLAttributes<HTMLInputElement>) {
+  const id = rest.id || rest.name;
   return (
     <div className="co-field">
-      <label>{label}</label>
-      <input {...rest} />
+      <label htmlFor={id}>{label}</label>
+      <input
+        id={id}
+        className={error ? "error" : undefined}
+        aria-invalid={error ? true : undefined}
+        aria-describedby={error ? `${id}-err` : undefined}
+        {...rest}
+      />
+      {error && (
+        <span id={`${id}-err`} className="co-field-err" role="alert">
+          {error}
+        </span>
+      )}
     </div>
   );
 }
@@ -436,24 +526,60 @@ function Step1({
   set,
   delhi,
   onNext,
+  errors,
+  addresses,
+  onUseSaved,
+  onSaveAddress,
 }: {
   data: CoData;
   set: (p: Partial<CoData>) => void;
   delhi: boolean;
   onNext: () => void;
+  errors: Errs;
+  addresses: ReturnType<typeof useAddressBook.getState>["addresses"];
+  onUseSaved: (id: string) => void;
+  onSaveAddress: () => void;
 }) {
   return (
-    <>
-      <div className="co-section-title">Personal Details</div>
+    <form
+      noValidate
+      onSubmit={(e) => {
+        e.preventDefault();
+        onNext();
+      }}
+    >
+      {addresses.length > 0 && (
+        <div className="co-field">
+          <label htmlFor="co-saved">Use a saved address</label>
+          <select
+            id="co-saved"
+            defaultValue=""
+            onChange={(e) => e.target.value && onUseSaved(e.target.value)}
+          >
+            <option value="">Enter a new address…</option>
+            {addresses.map((a) => (
+              <option key={a.id} value={a.id}>
+                {a.label} — {a.name}, {a.city}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+      <div className="co-section-title">Contact Details</div>
       <div className="co-2col">
         <Field
           label="Full Name *"
+          name="name"
+          autoComplete="name"
           value={data.name || ""}
           placeholder="Your full name"
+          error={errors.name}
           onChange={(e) => set({ name: e.target.value })}
         />
         <Field
           label="Company / Firm"
+          name="company"
+          autoComplete="organization"
           value={data.company || ""}
           placeholder="Optional"
           onChange={(e) => set({ company: e.target.value })}
@@ -462,13 +588,17 @@ function Step1({
       <div className="co-2col">
         <Field
           label="Email *"
+          name="email"
           type="email"
+          autoComplete="email"
+          inputMode="email"
           value={data.email || ""}
           placeholder="email@example.com"
+          error={errors.email}
           onChange={(e) => set({ email: e.target.value })}
         />
         <div className="co-field">
-          <label>Phone (India)</label>
+          <label htmlFor="phone">Phone (India) *</label>
           <div style={{ display: "flex", gap: 8 }}>
             <span
               style={{
@@ -483,31 +613,48 @@ function Step1({
               +91
             </span>
             <input
+              id="phone"
+              name="phone"
               type="tel"
+              autoComplete="tel-national"
+              inputMode="numeric"
+              className={errors.phone ? "error" : undefined}
+              aria-invalid={errors.phone ? true : undefined}
               value={data.phone || ""}
               placeholder="98100 00000"
               maxLength={10}
               style={{ flex: 1 }}
-              onChange={(e) => set({ phone: e.target.value })}
+              onChange={(e) => set({ phone: e.target.value.replace(/\D/g, "") })}
             />
           </div>
+          {errors.phone && (
+            <span className="co-field-err" role="alert">
+              {errors.phone}
+            </span>
+          )}
         </div>
       </div>
       <Field
         label="GST Number (optional)"
+        name="gst"
         value={data.gst || ""}
-        placeholder="07XXXXX0000X1Z0"
+        placeholder="For trade / business invoices"
         onChange={(e) => set({ gst: e.target.value })}
       />
       <div className="co-section-title">Delivery Address</div>
       <Field
         label="Address Line 1 *"
+        name="addr1"
+        autoComplete="address-line1"
         value={data.addr1 || ""}
         placeholder="Flat / House No., Building, Street"
+        error={errors.addr1}
         onChange={(e) => set({ addr1: e.target.value })}
       />
       <Field
         label="Address Line 2"
+        name="addr2"
+        autoComplete="address-line2"
         value={data.addr2 || ""}
         placeholder="Area / Locality / Landmark"
         onChange={(e) => set({ addr2: e.target.value })}
@@ -515,22 +662,32 @@ function Step1({
       <div className="co-3col">
         <Field
           label="City *"
+          name="city"
+          autoComplete="address-level2"
           value={data.city || ""}
           placeholder="e.g. New Delhi"
+          error={errors.city}
           onChange={(e) => set({ city: e.target.value })}
         />
         <Field
           label="State *"
+          name="state"
+          autoComplete="address-level1"
           value={data.state || ""}
           placeholder="e.g. Delhi"
+          error={errors.state}
           onChange={(e) => set({ state: e.target.value })}
         />
         <Field
           label="PIN Code *"
+          name="pin"
+          autoComplete="postal-code"
+          inputMode="numeric"
           value={data.pin || ""}
           placeholder="110001"
           maxLength={6}
-          onChange={(e) => set({ pin: e.target.value })}
+          error={errors.pin}
+          onChange={(e) => set({ pin: e.target.value.replace(/\D/g, "") })}
         />
       </div>
       {!delhi && (data.city || data.state) && (
@@ -541,12 +698,15 @@ function Step1({
           freight and shared before order confirmation.
         </div>
       )}
-      <div style={{ marginTop: 8 }}>
-        <button className="btn-primary" onClick={onNext} style={{ padding: "13px 32px" }}>
+      <div style={{ marginTop: 8, display: "flex", gap: 12, flexWrap: "wrap" }}>
+        <button type="submit" className="btn-primary" style={{ padding: "13px 32px" }}>
           Continue to Review →
         </button>
+        <button type="button" className="btn-ghost" onClick={onSaveAddress} style={{ padding: "11px 20px" }}>
+          Save address
+        </button>
       </div>
-    </>
+    </form>
   );
 }
 
@@ -766,6 +926,16 @@ function Step4({
               ? "Place Order →"
               : `Pay ${fmt(advance)} Advance →`}
         </button>
+      </div>
+      <div className="co-secure">
+        <span>
+          <Lock size={13} aria-hidden /> 256-bit SSL encrypted
+        </span>
+        <span>
+          <ShieldCheck size={13} aria-hidden /> Payments secured by Razorpay
+        </span>
+        <Link href="/returns">Returns &amp; cancellations</Link>
+        <Link href="/terms">Terms</Link>
       </div>
     </>
   );

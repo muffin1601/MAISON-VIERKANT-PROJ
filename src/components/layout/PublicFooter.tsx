@@ -71,17 +71,32 @@ export function PublicFooter() {
             <Link className="f-link" href="/contact">
               Request Quote
             </Link>
-            <Link className="f-link" href="/contact">
+            <Link className="f-link" href="/shipping">
               Shipping to India
             </Link>
           </div>
         </div>
+        <nav className="f-legal" aria-label="Legal">
+          <Link className="f-link" href="/privacy">
+            Privacy Policy
+          </Link>
+          <Link className="f-link" href="/terms">
+            Terms &amp; Conditions
+          </Link>
+          <Link className="f-link" href="/returns">
+            Returns &amp; Cancellations
+          </Link>
+          <Link className="f-link" href="/shipping">
+            Shipping &amp; Delivery
+          </Link>
+        </nav>
         <div className="f-bottom">
           <span>
             © 2026 Maison Vierkant India — Watcon Pvt. Ltd. · 343 Sultanpur, MG Road, New Delhi
             110030
           </span>
-          <span>GST: 07XXXXX0000X1Z0</span>
+          {/* TODO: replace with the registered GSTIN before launch. */}
+          <span>GST registration available on invoice</span>
         </div>
       </div>
     </footer>

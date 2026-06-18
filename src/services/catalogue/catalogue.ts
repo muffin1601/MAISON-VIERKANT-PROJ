@@ -214,12 +214,18 @@ export async function getProjects(): Promise<ProjectView[]> {
 
 /** Card price string, identical to prototype mkCard: "From ₹x" when multiple sizes. */
 export function cardPrice(p: ProductView, pricing: PricingConfig): string {
-  const prices = p.models.filter((m) => m.eur > 0).map((m) => calcINR(m.eur, pricing));
-  const base = p.eurPrice > 0 ? [calcINR(p.eurPrice, pricing)] : [];
-  const all = prices.length ? prices : base;
-  if (all.length === 0) return "Price on request"; // no EUR price set yet
-  const min = Math.min(...all);
-  return all.length > 1
+  const min = cardMinINR(p, pricing);
+  if (min === null) return "Price on request"; // no EUR price set yet
+  const multi =
+    p.models.filter((m) => m.eur > 0).length > 1 || (p.eurPrice > 0 && p.models.length > 1);
+  return multi
     ? `From ₹${min.toLocaleString("en-IN")}`
     : `₹${min.toLocaleString("en-IN")}`;
+}
+
+/** Lowest INR price for a product, or null if price-on-request. Used by sort/filter facets. */
+export function cardMinINR(p: ProductView, pricing: PricingConfig): number | null {
+  const prices = p.models.filter((m) => m.eur > 0).map((m) => calcINR(m.eur, pricing));
+  const all = prices.length ? prices : p.eurPrice > 0 ? [calcINR(p.eurPrice, pricing)] : [];
+  return all.length ? Math.min(...all) : null;
 }

@@ -16,10 +16,14 @@ export type PriceMap = Record<string, LineInfo>;
 /** Faithful port of prototype renderCart. */
 export function CartView({ priceMap }: { priceMap: PriceMap }) {
   const items = useCart((s) => s.items);
+  const saved = useCart((s) => s.saved);
   const setQty = useCart((s) => s.setQty);
   const remove = useCart((s) => s.remove);
+  const saveForLater = useCart((s) => s.saveForLater);
+  const moveToCart = useCart((s) => s.moveToCart);
+  const removeSaved = useCart((s) => s.removeSaved);
 
-  if (!items.length) {
+  if (!items.length && !saved.length) {
     return (
       <div className="sw" id="cart-content">
         <div className="cart-empty">
@@ -94,7 +98,7 @@ export function CartView({ priceMap }: { priceMap: PriceMap }) {
                   <div className="qty-ctrl">
                     <button
                       aria-label={`Decrease quantity of ${label}`}
-                      onClick={() => setQty(i.id, i.finish, i.code, i.qty - 1)}
+                      onClick={() => setQty(i.id, i.finish, i.code, Math.max(1, i.qty - 1))}
                     >
                       &#8722;
                     </button>
@@ -108,22 +112,14 @@ export function CartView({ priceMap }: { priceMap: PriceMap }) {
                       +
                     </button>
                   </div>
-                  <button
-                    style={{
-                      background: "none",
-                      border: "none",
-                      fontSize: 10,
-                      letterSpacing: ".1em",
-                      textTransform: "uppercase",
-                      color: "var(--ink4)",
-                      cursor: "pointer",
-                      fontFamily: "'Jost', sans-serif",
-                      marginTop: 4,
-                    }}
-                    onClick={() => remove(i.id, i.finish, i.code)}
-                  >
-                    Remove
-                  </button>
+                  <div className="ci-actions">
+                    <button className="ci-link" onClick={() => saveForLater(i.id, i.finish, i.code)}>
+                      Save for later
+                    </button>
+                    <button className="ci-link" onClick={() => remove(i.id, i.finish, i.code)}>
+                      Remove
+                    </button>
+                  </div>
                 </div>
               </div>
             );
@@ -170,6 +166,37 @@ export function CartView({ priceMap }: { priceMap: PriceMap }) {
           </Link>
         </div>
       </div>
+
+      {saved.length > 0 && (
+        <section className="saved-section">
+          <h2 className="saved-title">Saved for later ({saved.length})</h2>
+          <div className="saved-grid">
+            {saved.map((i) => {
+              const info = lineOf(i.id, i.code);
+              const label = i.code || i.name;
+              return (
+                <div className="saved-item" key={`sv-${i.id}|${i.finish}|${i.code}`}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={info.img || i.img} alt={i.name} />
+                  <div className="saved-info">
+                    <div className="saved-name">{label}</div>
+                    <div className="saved-meta">{i.finish}</div>
+                    <div className="saved-price">{info.unit ? fmt(info.unit) : "On request"}</div>
+                  </div>
+                  <div className="ci-actions">
+                    <button className="ci-link" onClick={() => moveToCart(i.id, i.finish, i.code)}>
+                      Move to cart
+                    </button>
+                    <button className="ci-link" onClick={() => removeSaved(i.id, i.finish, i.code)}>
+                      Remove
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
     </div>
   );
 }

@@ -1,7 +1,11 @@
 /* App-level global SCSS. The prototype stylesheet (the visual source of truth) is
    imported separately in layout.tsx as a plain global CSS side-effect, so its rules
    are inlined rather than emitted as a passthrough @import. Keep this file for
-   app-only globals that are NOT part of the prototype design. */
+   app-only globals that are NOT part of the prototype design.
+
+   prototype.css is marked "do not hand-edit". All production hardening that the
+   prototype lacks — accessibility, focus, motion, and a few extended design tokens —
+   lives here and is layered on top WITHOUT altering brand colours, fonts, or layout. */
 
 /* Links render as <a> via next/link — keep them undecorated and inheriting colour
    everywhere, matching the prototype's button-driven navigation. */
@@ -17,3 +21,1477 @@ a {
   width: fit-content;
 }
 
+/* ==========================================================================
+   DESIGN TOKENS — extension layer (Phase 1, design-system foundation)
+   Colours/fonts are preserved from the prototype. These add the missing
+   spacing / radius / shadow / motion / z-index / breakpoint scales plus
+   AA-safe text variants, so new components stop hardcoding literals.
+   ========================================================================== */
+:root {
+  /* spacing — 4px base */
+  --s1: 4px;  --s2: 8px;  --s3: 12px; --s4: 16px;
+  --s5: 24px; --s6: 32px; --s7: 48px; --s8: 64px;
+
+  /* radius */
+  --r-sm: 3px; --r: 4px; --r-lg: 8px; --r-pill: 999px;
+
+  /* shadows — warm-tinted to match the ink palette */
+  --shadow-sm: 0 1px 2px rgba(26, 24, 20, 0.06);
+  --shadow:    0 4px 16px rgba(26, 24, 20, 0.08);
+  --shadow-lg: 0 12px 40px rgba(26, 24, 20, 0.14);
+
+  /* motion */
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --dur-fast: 0.15s;
+  --dur: 0.25s;
+  --dur-slow: 0.4s;
+
+  /* z-index scale */
+  --z-header: 100;
+  --z-drawer: 200;
+  --z-overlay: 290;
+  --z-modal: 300;
+  --z-toast: 400;
+
+  /* AA-safe text on cream. --ink4 (#a09890 ≈ 2.3:1) and --ink3 (#6b6660 ≈ 4.0:1)
+     fail WCAG AA for body text. These darkened variants clear 4.5:1 while staying
+     within the same warm-grey family. Use --ink-muted for any real reading text. */
+  --ink-muted: #6e655c;   /* ≈ 4.6:1 on --cream — replaces --ink4 for text */
+  --ink-secondary: #595149; /* ≈ 6.3:1 on --cream */
+
+  /* focus ring */
+  --focus-ring: 0 0 0 2px var(--cream), 0 0 0 4px var(--gold);
+}
+
+/* ==========================================================================
+   ACCESSIBILITY — focus visibility (Phase 1, WCAG 2.4.7 / 2.4.11)
+   prototype.css ships `outline:none` on inputs with no replacement and zero
+   focus styling on buttons, making the site keyboard-invisible. Restore a
+   single, consistent, high-contrast focus indicator for keyboard users only.
+   ========================================================================== */
+
+/* Keyboard focus ring for every interactive element. :focus-visible keeps it
+   off for mouse/touch so the luxury aesthetic is unchanged for pointer users. */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible,
+[role="button"]:focus-visible,
+[role="tab"]:focus-visible,
+[role="option"]:focus-visible,
+summary:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+  border-radius: var(--r-sm);
+}
+
+/* Form controls that prototype.css explicitly cleared — give focus a visible
+   border + ring rather than the silent `outline:none`. */
+.admin-login-box input:focus-visible,
+.co-field input:focus-visible,
+.co-field select:focus-visible,
+.co-field textarea:focus-visible,
+.fg-g input:focus-visible,
+.fg-g select:focus-visible,
+.fg-g textarea:focus-visible,
+.a-input:focus-visible,
+.form-input:focus-visible,
+.pe-input:focus-visible,
+.pe-input-big:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 1px;
+  border-color: var(--gold);
+}
+
+/* ==========================================================================
+   SKIP LINK — keyboard users jump past the header to main content (WCAG 2.4.1)
+   ========================================================================== */
+.skip-link {
+  position: absolute;
+  left: var(--s4);
+  top: var(--s2);
+  z-index: var(--z-toast);
+  padding: var(--s2) var(--s4);
+  background: var(--ink);
+  color: var(--white);
+  border-radius: var(--r);
+  font-family: "Jost", sans-serif;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  transform: translateY(-150%);
+  transition: transform var(--dur) var(--ease);
+}
+.skip-link:focus {
+  transform: translateY(0);
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+/* Screen-reader-only utility for accessible labels on icon-only controls. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ==========================================================================
+   REDUCED MOTION — honour user OS preference (WCAG 2.3.3 / best practice)
+   prototype.css uses scroll-behavior:smooth and many hover transforms with no
+   guard. Collapse animation for users who ask for it.
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ==========================================================================
+   LEGAL / POLICY PAGES (Phase 1) — uses brand type, AA-safe muted text.
+   ========================================================================== */
+.legal-page {
+  background: var(--cream);
+  padding: var(--s8) var(--s4);
+}
+.legal-inner {
+  max-width: 760px;
+  margin: 0 auto;
+}
+.legal-eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: var(--s3);
+}
+.legal-updated {
+  color: var(--ink-muted);
+  font-size: 13px;
+  margin-bottom: var(--s6);
+}
+.legal-body {
+  color: var(--ink-secondary);
+  line-height: 1.8;
+
+  h2 {
+    font-family: var(--font-cormorant), "Cormorant Garamond", serif;
+    font-size: 22px;
+    font-weight: 400;
+    color: var(--ink);
+    margin: var(--s6) 0 var(--s2);
+  }
+  p {
+    margin-bottom: var(--s4);
+  }
+}
+
+/* Footer legal nav — small, inline, AA-safe row above the copyright bar. */
+.f-legal {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2) var(--s5);
+  margin: var(--s5) 0 var(--s3);
+  padding-top: var(--s4);
+  border-top: 1px solid rgba(248, 245, 240, 0.14);
+
+  .f-link {
+    font-size: 12px;
+    letter-spacing: 0.04em;
+    color: rgba(248, 245, 240, 0.66); /* AA-safe on --ink footer */
+  }
+}
+
+/* ==========================================================================
+   PHASE 2 — HEADER (mega menu, utility icons, mobile drawer)
+   ========================================================================== */
+.nav-primary {
+  display: flex;
+  gap: var(--s5);
+  align-items: center;
+}
+/* Logo must yield space to the actions so the menu/icons never overflow
+   off-screen (body has overflow-x:hidden, which would otherwise clip them). */
+.header-inner {
+  gap: var(--s3);
+}
+.logo {
+  min-width: 0;
+  flex-shrink: 1;
+  overflow: hidden;
+}
+.logo-main,
+.logo-sub {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--s4);
+  flex-shrink: 0; /* keep search / wishlist / cart / menu always visible */
+}
+.hdr-icon {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--ink);
+  min-width: 32px;
+  min-height: 32px;
+  transition: color var(--dur-fast) var(--ease);
+
+  &:hover {
+    color: var(--gold);
+  }
+}
+.hdr-account {
+  font-size: 11px;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--ink3);
+}
+.hdr-icon:hover .hdr-account {
+  color: var(--ink);
+}
+.hdr-badge {
+  position: absolute;
+  top: -6px;
+  right: -8px;
+  background: var(--gold);
+  color: #fff;
+  border-radius: var(--r-pill);
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  font-size: 9px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Mega menu */
+.nav-mega-wrap {
+  position: relative;
+}
+.nav-mega {
+  position: absolute;
+  top: calc(100% + 14px);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: var(--s7);
+  width: max-content;
+  min-width: 560px;
+  max-width: min(720px, calc(100vw - 32px));
+  background: var(--white);
+  border: 1px solid var(--cream3);
+  box-shadow: var(--shadow-lg);
+  border-radius: var(--r);
+  padding: var(--s6);
+  z-index: var(--z-drawer);
+}
+.nav-mega::before {
+  /* hover bridge so the menu doesn't close in the gap */
+  content: "";
+  position: absolute;
+  top: -14px;
+  left: 0;
+  right: 0;
+  height: 14px;
+}
+.nav-mega-title {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: var(--s3);
+}
+.nav-mega-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--s2) var(--s5);
+}
+.nav-mega-feature {
+  border-left: 1px solid var(--cream3);
+  padding-left: var(--s6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  justify-content: center;
+}
+.nav-mega-link {
+  font-size: 13px;
+  color: var(--ink-secondary);
+  transition: color var(--dur-fast) var(--ease);
+
+  &:hover {
+    color: var(--gold);
+  }
+  &.strong {
+    font-family: var(--font-cormorant), "Cormorant Garamond", serif;
+    font-size: 17px;
+    color: var(--ink);
+  }
+}
+
+/* Mobile off-canvas drawer */
+.mob-nav-wrap {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-drawer);
+  display: none;
+}
+.mob-nav-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(26, 24, 20, 0.5);
+  border: none;
+  cursor: pointer;
+  animation: mvi-fade var(--dur) var(--ease);
+}
+.mob-nav {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(86vw, 360px);
+  background: var(--cream);
+  box-shadow: var(--shadow-lg);
+  padding: calc(64px + var(--s4)) var(--s5) var(--s5);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+  animation: mvi-slide-in var(--dur) var(--ease);
+}
+.mob-search {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  width: 100%;
+  background: var(--white);
+  border: 1px solid var(--cream3);
+  border-radius: var(--r);
+  padding: 12px 14px;
+  font-size: 13px;
+  color: var(--ink3);
+  cursor: pointer;
+  margin-bottom: var(--s3);
+}
+.mob-link {
+  padding: 14px 4px;
+  border-bottom: 1px solid var(--cream3);
+  font-size: 14px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-secondary);
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+
+  &.active {
+    color: var(--gold);
+  }
+  &.mob-admin {
+    border-bottom: none;
+    font-size: 11px;
+    color: var(--ink-muted);
+    margin-top: var(--s3);
+  }
+}
+@media (max-width: 900px) {
+  .nav-primary {
+    display: none;
+  }
+  .mob-nav-wrap {
+    display: block;
+  }
+  .hide-mobile {
+    display: none;
+  }
+}
+@keyframes mvi-fade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes mvi-slide-in {
+  from {
+    transform: translateX(100%);
+  }
+}
+
+/* ==========================================================================
+   PHASE 2 — PRODUCT CARD (hover image, wishlist, badge)
+   ========================================================================== */
+.pc-img {
+  position: relative;
+  overflow: hidden;
+}
+.pc-img-hover {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity var(--dur) var(--ease);
+}
+.pc:hover .pc-img-hover {
+  opacity: 1;
+}
+.pc-badge {
+  position: absolute;
+  top: var(--s3);
+  left: var(--s3);
+  background: var(--ink);
+  color: var(--cream);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 4px 9px;
+  border-radius: var(--r-sm);
+}
+.wish-btn {
+  position: absolute;
+  top: var(--s2);
+  right: var(--s2);
+  z-index: 2;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(253, 252, 250, 0.9);
+  border: 1px solid var(--cream3);
+  border-radius: var(--r-pill);
+  color: var(--ink3);
+  cursor: pointer;
+  transition: color var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease);
+
+  &:hover {
+    color: var(--gold);
+  }
+  &.is-saved {
+    color: var(--gold);
+    background: var(--white);
+  }
+}
+
+/* ==========================================================================
+   PHASE 2 — COLLECTION (PLP) toolbar, filters, grid, drawer
+   ========================================================================== */
+.plp-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--s4);
+  padding-bottom: var(--s4);
+  border-bottom: 1px solid var(--cream3);
+  margin-bottom: var(--s5);
+}
+.plp-count {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  margin-right: auto;
+}
+.plp-filter-toggle {
+  display: none;
+  align-items: center;
+  gap: var(--s2);
+  background: none;
+  border: 1px solid var(--cream3);
+  border-radius: var(--r);
+  padding: 9px 14px;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink);
+  cursor: pointer;
+}
+.plp-fcount {
+  background: var(--gold);
+  color: #fff;
+  border-radius: var(--r-pill);
+  font-size: 9px;
+  padding: 1px 6px;
+}
+.plp-sort select {
+  border: 1px solid var(--cream3);
+  border-radius: var(--r);
+  padding: 9px 32px 9px 12px;
+  font-size: 12px;
+  background: var(--white);
+  color: var(--ink);
+  cursor: pointer;
+}
+.plp-body {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: var(--s7);
+  align-items: start;
+}
+.plp-rail {
+  position: sticky;
+  top: 88px;
+}
+.facet {
+  border: none;
+  border-bottom: 1px solid var(--cream3);
+  padding: 0 0 var(--s4);
+  margin-bottom: var(--s4);
+
+  legend {
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink);
+    margin-bottom: var(--s3);
+  }
+}
+.facet-opt {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  padding: 5px 0;
+  font-size: 13px;
+  color: var(--ink-secondary);
+  cursor: pointer;
+
+  input {
+    accent-color: var(--gold);
+    width: 15px;
+    height: 15px;
+  }
+}
+.facet-clear {
+  width: 100%;
+}
+.plp-empty {
+  text-align: center;
+  padding: 48px 0;
+
+  h2 {
+    font-family: var(--font-cormorant), "Cormorant Garamond", serif;
+    font-size: 28px;
+    font-weight: 300;
+    color: var(--ink);
+    margin-bottom: var(--s2);
+  }
+  p {
+    color: var(--ink-muted);
+    margin-bottom: var(--s4);
+  }
+}
+.plp-more {
+  text-align: center;
+  margin-top: var(--s7);
+}
+
+/* PLP mobile filter drawer */
+.plp-drawer-wrap {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-drawer);
+}
+.plp-drawer-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(26, 24, 20, 0.5);
+  border: none;
+  cursor: pointer;
+}
+.plp-drawer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: min(88vw, 340px);
+  background: var(--cream);
+  display: flex;
+  flex-direction: column;
+  animation: mvi-slide-in-left var(--dur) var(--ease);
+}
+.plp-drawer-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--s4) var(--s5);
+  border-bottom: 1px solid var(--cream3);
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+
+  button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--ink);
+  }
+}
+.plp-drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--s5);
+}
+.plp-drawer-foot {
+  padding: var(--s4) var(--s5);
+  border-top: 1px solid var(--cream3);
+
+  .btn-dark {
+    width: 100%;
+  }
+}
+@keyframes mvi-slide-in-left {
+  from {
+    transform: translateX(-100%);
+  }
+}
+@media (max-width: 860px) {
+  .plp-body {
+    grid-template-columns: 1fr;
+  }
+  .plp-rail {
+    display: none;
+  }
+  .plp-filter-toggle {
+    display: inline-flex;
+  }
+}
+
+/* ==========================================================================
+   PHASE 2 — SEARCH OVERLAY
+   ========================================================================== */
+.search-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal);
+}
+.search-overlay-bg {
+  position: absolute;
+  inset: 0;
+  background: rgba(26, 24, 20, 0.55);
+  border: none;
+  cursor: pointer;
+  animation: mvi-fade var(--dur) var(--ease);
+}
+.search-panel {
+  position: relative;
+  width: calc(100% - 24px);
+  max-width: 640px;
+  margin: 8vh auto 0;
+  background: var(--cream);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  animation: mvi-pop var(--dur) var(--ease);
+}
+@keyframes mvi-pop {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+}
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  padding: var(--s4) var(--s5);
+  border-bottom: 1px solid var(--cream3);
+  color: var(--ink-muted);
+
+  input {
+    flex: 1;
+    border: none;
+    background: none;
+    font-size: 18px;
+    font-family: var(--font-cormorant), "Cormorant Garamond", serif;
+    color: var(--ink);
+
+    &:focus {
+      outline: none;
+    }
+  }
+}
+.search-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--ink-muted);
+
+  &:hover {
+    color: var(--ink);
+  }
+}
+.search-results {
+  max-height: 60vh;
+  overflow-y: auto;
+  padding: var(--s4) var(--s5) var(--s5);
+}
+.search-group + .search-group {
+  margin-top: var(--s4);
+}
+.search-group-title {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: var(--s2);
+}
+.search-recent,
+.search-series {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 9px 4px;
+  font-size: 14px;
+  color: var(--ink-secondary);
+  border-radius: var(--r-sm);
+
+  &:hover {
+    color: var(--gold);
+  }
+}
+.search-hit {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: var(--s2) 4px;
+  border-radius: var(--r-sm);
+  transition: background var(--dur-fast) var(--ease);
+
+  &:hover {
+    background: var(--cream2);
+  }
+  img {
+    width: 48px;
+    height: 48px;
+    object-fit: cover;
+    border-radius: var(--r-sm);
+  }
+  span {
+    display: flex;
+    flex-direction: column;
+  }
+}
+.search-hit-name {
+  font-family: var(--font-cormorant), "Cormorant Garamond", serif;
+  font-size: 16px;
+  color: var(--ink);
+}
+.search-hit-series {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.search-empty {
+  text-align: center;
+  padding: var(--s6) 0;
+  color: var(--ink-secondary);
+
+  .search-empty-sub {
+    font-size: 13px;
+    color: var(--ink-muted);
+    margin: var(--s2) 0 var(--s4);
+  }
+}
+
+/* ==========================================================================
+   PHASE 3 — PDP GALLERY (zoom, lightbox, swipe) + purchase + rails
+   ========================================================================== */
+.pd-gallery {
+  position: relative;
+}
+.pd-main-img {
+  position: relative;
+  overflow: hidden;
+  cursor: zoom-in;
+  border-radius: var(--r);
+
+  img {
+    width: 100%;
+    transition: transform var(--dur) var(--ease);
+  }
+  &.is-zoom img {
+    cursor: zoom-in;
+  }
+}
+.pd-zoom-hint {
+  position: absolute;
+  bottom: var(--s3);
+  right: var(--s3);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(253, 252, 250, 0.92);
+  color: var(--ink);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  padding: 6px 10px;
+  border-radius: var(--r-sm);
+  pointer-events: none;
+  transition: opacity var(--dur) var(--ease);
+}
+.pd-main-img.is-zoom .pd-zoom-hint {
+  opacity: 0;
+}
+.pd-gnav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(253, 252, 250, 0.9);
+  border: 1px solid var(--cream3);
+  border-radius: var(--r-pill);
+  color: var(--ink);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity var(--dur) var(--ease);
+
+  &.prev {
+    left: var(--s3);
+  }
+  &.next {
+    right: var(--s3);
+  }
+}
+.pd-main-img:hover .pd-gnav {
+  opacity: 1;
+}
+.pd-thumbs {
+  display: flex;
+  gap: var(--s2);
+  margin-top: var(--s3);
+  flex-wrap: wrap;
+}
+.pd-thumb {
+  width: 64px;
+  height: 64px;
+  padding: 0;
+  border: 1px solid var(--cream3);
+  border-radius: var(--r-sm);
+  overflow: hidden;
+  cursor: pointer;
+  background: none;
+  transition: border-color var(--dur-fast) var(--ease);
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  &.active {
+    border-color: var(--gold);
+  }
+}
+/* Lightbox */
+.pd-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal);
+  background: rgba(26, 24, 20, 0.92);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: mvi-fade var(--dur) var(--ease);
+}
+.pd-lb-img {
+  max-width: 90vw;
+  max-height: 86vh;
+  object-fit: contain;
+}
+.pd-lb-close {
+  position: absolute;
+  top: var(--s5);
+  right: var(--s5);
+  background: none;
+  border: none;
+  color: var(--cream);
+  cursor: pointer;
+}
+.pd-lb-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--cream);
+  cursor: pointer;
+  padding: var(--s3);
+
+  &.prev {
+    left: var(--s4);
+  }
+  &.next {
+    right: var(--s4);
+  }
+}
+.pd-lb-count {
+  position: absolute;
+  bottom: var(--s5);
+  left: 50%;
+  transform: translateX(-50%);
+  color: var(--cream);
+  font-size: 13px;
+  letter-spacing: 0.1em;
+}
+
+/* Title row + wishlist + availability */
+.pd-title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--s3);
+}
+.pd-wish {
+  position: static;
+  flex-shrink: 0;
+}
+.pd-avail {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: var(--ink-secondary);
+  margin: var(--s3) 0 var(--s4);
+}
+.pd-avail-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--r-pill);
+  background: #2c5c2c;
+}
+.pd-avail.out .pd-avail-dot {
+  background: var(--danger);
+}
+.pd-request-note {
+  font-size: 13px;
+  color: var(--ink-muted);
+  margin: var(--s2) 0 var(--s3);
+  line-height: 1.6;
+}
+
+/* Quantity input + disabled add button */
+.qty-ctrl .qty-val {
+  width: 44px;
+  text-align: center;
+  border: none;
+  background: none;
+  font-size: 15px;
+  color: var(--ink);
+  -moz-appearance: textfield;
+
+  &::-webkit-outer-spin-button,
+  &::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+}
+.add-btn:disabled,
+.add-btn[aria-disabled="true"] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Related / recently-viewed rails */
+.pd-rail-section {
+  margin-top: var(--s8);
+  padding-top: var(--s6);
+  border-top: 1px solid var(--cream3);
+}
+.pd-rail-title {
+  font-family: var(--font-cormorant), "Cormorant Garamond", serif;
+  font-size: 28px;
+  font-weight: 300;
+  color: var(--ink);
+  margin-bottom: var(--s5);
+}
+.pg-rail {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--s5);
+}
+@media (max-width: 860px) {
+  .pg-rail {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* ==========================================================================
+   PHASE 3 — MINI-CART DRAWER
+   ========================================================================== */
+.mc-wrap {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal);
+}
+.mc-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(26, 24, 20, 0.5);
+  border: none;
+  cursor: pointer;
+  animation: mvi-fade var(--dur) var(--ease);
+}
+.mc {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(92vw, 400px);
+  background: var(--cream);
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+  animation: mvi-slide-in var(--dur) var(--ease);
+}
+.mc-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--s4) var(--s5);
+  border-bottom: 1px solid var(--cream3);
+  font-family: var(--font-cormorant), "Cormorant Garamond", serif;
+  font-size: 22px;
+  color: var(--ink);
+
+  button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--ink);
+  }
+}
+.mc-count {
+  color: var(--ink-muted);
+  font-size: 16px;
+}
+.mc-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s4);
+  color: var(--ink-muted);
+
+  .btn-dark {
+    text-decoration: none;
+  }
+}
+.mc-items {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--s4) var(--s5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s4);
+}
+.mc-item {
+  display: flex;
+  gap: var(--s3);
+  align-items: flex-start;
+
+  img {
+    width: 64px;
+    height: 64px;
+    object-fit: cover;
+    border-radius: var(--r-sm);
+    flex-shrink: 0;
+  }
+}
+.mc-item-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.mc-item-name {
+  font-family: var(--font-cormorant), "Cormorant Garamond", serif;
+  font-size: 16px;
+  color: var(--ink);
+}
+.mc-item-meta {
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--ink-muted);
+}
+.mc-item-price {
+  font-size: 14px;
+  color: var(--ink);
+  margin-top: 2px;
+}
+.mc-item-remove {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--ink-muted);
+
+  &:hover {
+    color: var(--danger);
+  }
+}
+.mc-foot {
+  border-top: 1px solid var(--cream3);
+  padding: var(--s4) var(--s5);
+}
+.mc-subtotal {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-cormorant), "Cormorant Garamond", serif;
+  font-size: 20px;
+  color: var(--ink);
+  margin-bottom: var(--s2);
+}
+.mc-note {
+  font-size: 11px;
+  color: var(--ink-muted);
+  margin-bottom: var(--s2);
+}
+.mc-cta {
+  display: block;
+  width: 100%;
+  text-align: center;
+  text-decoration: none;
+  margin-top: var(--s2);
+}
+
+/* ==========================================================================
+   PHASE 4 — CHECKOUT validation, trust, save-for-later, account, address book
+   ========================================================================== */
+.co-field-err {
+  display: block;
+  color: var(--danger);
+  font-size: 11px;
+  margin-top: 4px;
+}
+.co-secure {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s2) var(--s4);
+  margin-top: var(--s4);
+  padding-top: var(--s3);
+  border-top: 1px solid var(--cream3);
+  font-size: 11px;
+  color: var(--ink-muted);
+
+  span {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+  a {
+    color: var(--ink-muted);
+    text-decoration: underline;
+
+    &:hover {
+      color: var(--gold);
+    }
+  }
+}
+
+/* Cart line actions + save-for-later */
+.ci-actions {
+  display: flex;
+  gap: var(--s3);
+  margin-top: var(--s2);
+}
+.ci-link {
+  background: none;
+  border: none;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  cursor: pointer;
+  font-family: var(--font-jost), "Jost", sans-serif;
+
+  &:hover {
+    color: var(--gold);
+  }
+}
+.saved-section {
+  margin-top: var(--s8);
+  padding-top: var(--s6);
+  border-top: 1px solid var(--cream3);
+}
+.saved-title {
+  font-family: var(--font-cormorant), "Cormorant Garamond", serif;
+  font-size: 24px;
+  font-weight: 300;
+  color: var(--ink);
+  margin-bottom: var(--s5);
+}
+.saved-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: var(--s5);
+}
+.saved-item {
+  display: flex;
+  gap: var(--s3);
+  align-items: flex-start;
+
+  img {
+    width: 72px;
+    height: 72px;
+    object-fit: cover;
+    border-radius: var(--r-sm);
+  }
+}
+.saved-name {
+  font-family: var(--font-cormorant), "Cormorant Garamond", serif;
+  font-size: 17px;
+  color: var(--ink);
+}
+.saved-meta {
+  font-size: 11px;
+  color: var(--ink-muted);
+}
+.saved-price {
+  font-size: 13px;
+  color: var(--ink);
+  margin-top: 2px;
+}
+
+/* Account nav tabs */
+.acct-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s5);
+  border-bottom: 1px solid var(--cream3);
+  margin-top: var(--s4);
+}
+.acct-tab {
+  padding: var(--s3) 0;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+
+  &:hover {
+    color: var(--ink);
+  }
+  &.active {
+    color: var(--ink);
+    border-bottom-color: var(--gold);
+  }
+}
+
+/* Address book */
+.addr-empty {
+  color: var(--ink-muted);
+  margin: var(--s4) 0;
+}
+.addr-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: var(--s4);
+  margin-bottom: var(--s4);
+}
+.addr-card {
+  position: relative;
+  border: 1px solid var(--cream3);
+  border-radius: var(--r);
+  padding: var(--s4);
+  background: var(--white);
+
+  &.is-default {
+    border-color: var(--gold);
+  }
+}
+.addr-badge {
+  position: absolute;
+  top: var(--s3);
+  right: var(--s3);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+.addr-label {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: var(--s2);
+}
+.addr-lines {
+  font-size: 13px;
+  line-height: 1.8;
+  color: var(--ink-secondary);
+}
+.addr-actions {
+  display: flex;
+  gap: var(--s3);
+  margin-top: var(--s3);
+}
+.addr-form {
+  border: 1px solid var(--cream3);
+  border-radius: var(--r);
+  padding: var(--s5);
+  margin-top: var(--s4);
+  background: var(--white);
+
+  input {
+    border: 1px solid var(--cream3);
+    border-radius: var(--r-sm);
+    padding: 9px 12px;
+    font-size: 13px;
+    width: 100%;
+    background: var(--white);
+    color: var(--ink);
+  }
+}
+
+/* ==========================================================================
+   RESPONSIVE AUDIT — adaptations for the Phase 2–4 components across all
+   breakpoints (the verbatim prototype already covers its own components).
+   Mobile-first safety: no horizontal overflow, ≥44px touch targets, smooth
+   collapse of every new grid/toolbar/drawer.
+   ========================================================================== */
+
+/* Tablet / small laptop: keep the mega menu inside the viewport and let its
+   series grid relax to two columns so it never clips. */
+@media (max-width: 1024px) {
+  .nav-mega {
+    min-width: 0;
+    gap: var(--s5);
+    padding: var(--s5);
+  }
+  .nav-mega-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .plp-body {
+    gap: var(--s6);
+  }
+  .pg-rail {
+    gap: var(--s4);
+  }
+}
+
+/* PLP toolbar: allow wrapping so count + sort never overflow on narrow screens. */
+@media (max-width: 640px) {
+  .plp-toolbar {
+    flex-wrap: wrap;
+    gap: var(--s3);
+  }
+  .plp-count {
+    order: 3;
+    flex-basis: 100%;
+    margin-right: 0;
+  }
+  .plp-sort select {
+    width: 100%;
+  }
+  .plp-sort {
+    flex: 1;
+  }
+  /* Account tabs scroll horizontally rather than wrapping into a tall block. */
+  .acct-nav {
+    gap: var(--s4);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    flex-wrap: nowrap;
+  }
+  .acct-tab {
+    white-space: nowrap;
+  }
+  /* Related / recently-viewed rails: two compact cards per row reads better
+     than four cramped ones. */
+  .pg-rail {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  /* Checkout secure row wraps cleanly. */
+  .co-secure {
+    gap: var(--s2) var(--s3);
+  }
+  /* Mini-cart + drawers already use vw widths; ensure full-height scroll. */
+  .search-results {
+    max-height: 64vh;
+  }
+}
+
+/* Small phones: relieve header crowding and shrink rails to a single column. */
+@media (max-width: 420px) {
+  .header-actions {
+    gap: 10px;
+  }
+  .hdr-icon {
+    min-width: 26px;
+  }
+  /* Free up width on tiny screens — keep the wordmark, drop the sub-line. */
+  .logo-sub {
+    display: none;
+  }
+  .logo-main {
+    font-size: 16px;
+  }
+  .pg-rail,
+  .saved-grid {
+    grid-template-columns: 1fr;
+  }
+  .search-panel {
+    width: calc(100% - 16px);
+    margin-top: 4vh;
+  }
+  .search-bar input {
+    font-size: 16px; /* ≥16px prevents iOS input zoom */
+  }
+  .mc {
+    width: 100vw;
+  }
+  .pd-title-row {
+    gap: var(--s2);
+  }
+}
+
+/* Cart line on very narrow screens: let the right-hand action column breathe. */
+@media (max-width: 380px) {
+  .ci-actions {
+    flex-direction: column;
+    gap: var(--s1);
+    align-items: flex-end;
+  }
+}

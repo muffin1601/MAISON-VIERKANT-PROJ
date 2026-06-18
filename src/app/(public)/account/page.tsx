@@ -5,6 +5,7 @@ import { getCurrentUser } from "@/lib/auth/session";
 import { getCustomerWithOrders } from "@/services/account/queries";
 import { OrderList } from "@/features/account/OrderList";
 import { AccountSignOut } from "@/features/account/AccountSignOut";
+import { AccountNav } from "@/features/account/AccountNav";
 
 export const metadata: Metadata = { title: "My Account" };
 export const dynamic = "force-dynamic";
@@ -38,6 +39,8 @@ export default async function AccountPage() {
           </div>
           <AccountSignOut />
         </div>
+
+        <AccountNav />
 
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", margin: "28px 0 14px" }}>
           <div className="co-section-title" style={{ margin: 0 }}>

@@ -6,20 +6,43 @@ import type { ProductView } from "@/services/catalogue/catalogue";
 import { calcINR, type PricingConfig } from "@/services/pricing/PricingService";
 import { fmt } from "@/lib/format";
 import { useCart } from "@/store/cart";
+import { useUI } from "@/store/ui";
 import { showToast } from "@/lib/toast";
 import { FileText, Download } from "@/components/ui/icons";
+import { ProductGallery } from "@/features/catalogue/ProductGallery";
+import { WishlistButton } from "@/features/catalogue/WishlistButton";
+import { ProductCardLite } from "@/features/catalogue/ProductCardLite";
+import { RecentlyViewed } from "@/features/catalogue/RecentlyViewed";
+import type { CardData } from "@/features/catalogue/cardData";
 
-/** Faithful port of prototype renderPD/openProd/addToCt — exact markup & behaviour. */
-export function ProductDetail({ p, pricing }: { p: ProductView; pricing: PricingConfig }) {
+/** Luxury PDP — gallery, integrity-safe purchase, related & recently-viewed. */
+export function ProductDetail({
+  p,
+  pricing,
+  related = [],
+  all = [],
+}: {
+  p: ProductView;
+  pricing: PricingConfig;
+  related?: CardData[];
+  all?: CardData[];
+}) {
   const [selModelIdx, setSelModelIdx] = useState(0);
   const [selFin, setSelFin] = useState(p.finishes[0] ?? "");
   const [qty, setQty] = useState(1);
-  const [thumbIdx, setThumbIdx] = useState(0);
   const add = useCart((s) => s.add);
+  const openMiniCart = useUI((s) => s.openMiniCart);
 
   const imgs = p.imgs;
   const mods = p.models;
   const cm = mods[selModelIdx];
+  const soldOut = ["sold_out", "out"].includes(p.status?.toLowerCase());
+  // Purchasable only when a real price exists for the selection.
+  const priced = mods.length > 0 ? cm.eur > 0 : p.eurPrice > 0;
+  const needFinish = p.finishes.length > 0 && !selFin;
+  const canAdd = priced && !needFinish && !soldOut;
+  const selectedINR = mods.length > 0 ? (cm.eur > 0 ? calcINR(cm.eur, pricing) : 0) : p.eurPrice > 0 ? calcINR(p.eurPrice, pricing) : 0;
+
   // Catalogue/documents are served through the branded stamping route; technical
   // drawings (images) are linked directly.
   const catalogueUrl = p.documents[0]
@@ -27,9 +50,17 @@ export function ProductDetail({ p, pricing }: { p: ProductView; pricing: Pricing
     : (p.drawings[0] ?? "");
 
   function addToCart() {
+    if (!canAdd) {
+      showToast(needFinish ? "Please select a finish first." : "This piece is available on request.");
+      return;
+    }
     const modelCode = mods.length > 0 ? mods[selModelIdx].code : p.name;
-    add({ id: p.code, slug: p.slug, name: p.name, finish: selFin, code: modelCode, img: imgs[0] }, qty);
-    showToast(`${modelCode} (${selFin}) added to cart.`);
+    add(
+      { id: p.code, slug: p.slug, name: p.name, finish: selFin, code: modelCode, img: imgs[0], unitINR: selectedINR },
+      qty,
+    );
+    openMiniCart();
+    showToast(`${modelCode}${selFin ? ` (${selFin})` : ""} added to cart.`);
   }
 
   return (
@@ -90,30 +121,22 @@ export function ProductDetail({ p, pricing }: { p: ProductView; pricing: Pricing
         </div>
         <div className="pd-grid">
           <div>
-            <div className="pd-main-img">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img id="pd-main-img" src={imgs[thumbIdx] || imgs[0] || ""} alt={p.name} />
-            </div>
-            <div className="pd-thumbs" id="pd-thumbs">
-              {imgs.map((img, i) => (
-                <div
-                  key={i}
-                  className={`pd-thumb${i === thumbIdx ? " active" : ""}`}
-                  onClick={() => setThumbIdx(i)}
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={img} alt={p.name} loading="lazy" />
-                </div>
-              ))}
-            </div>
+            <ProductGallery imgs={imgs} name={p.name} />
           </div>
           <div>
-            <div className="pd-series" id="pd-series">
-              {p.series}
+            <div className="pd-title-row">
+              <div className="pd-series" id="pd-series">
+                {p.series}
+              </div>
+              <WishlistButton slug={p.slug} name={p.name} className="pd-wish" />
             </div>
             <h1 className="pd-name" id="pd-name">
               {p.name}
             </h1>
+            {/* Availability status */}
+            <div className={`pd-avail${soldOut ? " out" : " in"}`}>
+              <span className="pd-avail-dot" aria-hidden /> {soldOut ? "Made to order — currently unavailable" : "Made to order · 10–14 week lead time"}
+            </div>
             <p className="pd-desc" id="pd-desc">
               {p.desc}
             </p>
@@ -141,6 +164,14 @@ export function ProductDetail({ p, pricing }: { p: ProductView; pricing: Pricing
                           key={m.code}
                           className={`mrow${i === selModelIdx ? " mrow-active" : ""}`}
                           onClick={() => setSelModelIdx(i)}
+                          tabIndex={0}
+                          aria-selected={i === selModelIdx}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              setSelModelIdx(i);
+                            }
+                          }}
                         >
                           <td>
                             <span className="mt-code">{m.code}</span>
@@ -204,26 +235,45 @@ export function ProductDetail({ p, pricing }: { p: ProductView; pricing: Pricing
             </div>
             <div className="qty-row">
               <div className="qty-ctrl">
-                <button onClick={() => setQty((q) => Math.max(1, q - 1))}>−</button>
-                <span className="qty-val" id="pd-qty">
-                  {qty}
-                </span>
-                <button onClick={() => setQty((q) => q + 1)}>+</button>
+                <button aria-label="Decrease quantity" onClick={() => setQty((q) => Math.max(1, q - 1))}>
+                  −
+                </button>
+                <input
+                  className="qty-val"
+                  id="pd-qty"
+                  type="number"
+                  min={1}
+                  max={99}
+                  value={qty}
+                  aria-label="Quantity"
+                  onChange={(e) => {
+                    const n = parseInt(e.target.value, 10);
+                    setQty(Number.isNaN(n) ? 1 : Math.min(99, Math.max(1, n)));
+                  }}
+                />
+                <button aria-label="Increase quantity" onClick={() => setQty((q) => Math.min(99, q + 1))}>
+                  +
+                </button>
               </div>
-              <button className="add-btn" id="add-btn" onClick={addToCart}>
-                Add to Cart
+              <button
+                className="add-btn"
+                id="add-btn"
+                onClick={addToCart}
+                disabled={!canAdd}
+                aria-disabled={!canAdd}
+              >
+                {soldOut ? "Unavailable" : needFinish ? "Select a finish" : !priced ? "Price on request" : "Add to Cart"}
               </button>
             </div>
-            <button
-              className="bespoke-btn"
-              onClick={() =>
-                showToast(
-                  "Our team will contact you to discuss your bespoke requirements within 24 hours.",
-                )
-              }
-            >
+            {!priced && (
+              <p className="pd-request-note">
+                This series is priced on request. Send us your requirements and we&apos;ll respond within
+                24 hours.
+              </p>
+            )}
+            <Link href={`/contact?ref=${encodeURIComponent(p.name)}`} className="bespoke-btn" style={{ display: "block", textAlign: "center" }}>
               Request Bespoke Quote
-            </button>
+            </Link>
             <div className="pd-story">
               <div className="pd-story-l">Belgian Craft · Indian Home</div>
               <p className="pd-story-t">
@@ -272,17 +322,26 @@ export function ProductDetail({ p, pricing }: { p: ProductView; pricing: Pricing
         </div>
       </div>
 
+      {/* Related + recently viewed */}
+      <div className="sw">
+        {related.length > 0 && (
+          <section className="pd-rail-section">
+            <h2 className="pd-rail-title">More from {p.series}</h2>
+            <div className="pg pg-rail">
+              {related.slice(0, 4).map((r) => (
+                <ProductCardLite key={r.slug} p={r} />
+              ))}
+            </div>
+          </section>
+        )}
+        <RecentlyViewed all={all} currentSlug={p.slug} />
+      </div>
+
       {/* Sticky add-to-cart bar — mobile/tablet only (shown via CSS ≤860px). */}
       <div className="pd-sticky-bar">
-        <div className="pd-sticky-price">
-          {mods.length === 0
-            ? "On Request"
-            : cm.eur > 0
-              ? fmt(calcINR(cm.eur, pricing))
-              : "On Request"}
-        </div>
-        <button className="add-btn" onClick={addToCart}>
-          Add to Cart
+        <div className="pd-sticky-price">{priced ? fmt(selectedINR) : "On Request"}</div>
+        <button className="add-btn" onClick={addToCart} disabled={!canAdd} aria-disabled={!canAdd}>
+          {soldOut ? "Unavailable" : needFinish ? "Select finish" : !priced ? "Enquire" : "Add to Cart"}
         </button>
       </div>
     </div>
