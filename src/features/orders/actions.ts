@@ -29,16 +29,25 @@ export const updateOrderStatus = withPermission(
     if (!ORDER_STATUSES.includes(input.status)) {
       throw new Error("Invalid status");
     }
-    const order = await prisma.order.update({
-      where: { number: input.number },
-      data: {
-        status: input.status,
-        ...(input.trackingNumber !== undefined
-          ? { trackingNumber: input.trackingNumber || null }
-          : {}),
-      },
-      include: { customer: true },
-    });
+    let order;
+    try {
+      order = await prisma.order.update({
+        where: { number: input.number },
+        data: {
+          status: input.status,
+          ...(input.trackingNumber !== undefined
+            ? { trackingNumber: input.trackingNumber || null }
+            : {}),
+        },
+        include: { customer: true },
+      });
+    } catch (err) {
+      // Unknown order number → return a clean result instead of a raw 500.
+      if (err && typeof err === "object" && "code" in err && err.code === "P2025") {
+        return { ok: false as const, notFound: true as const };
+      }
+      throw err;
+    }
 
     if (order.customer.email) {
       void sendOrderStatusEmail({

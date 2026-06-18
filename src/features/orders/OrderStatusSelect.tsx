@@ -26,7 +26,12 @@ export function OrderStatusSelect({
     setValue(next);
     startTransition(async () => {
       try {
-        await updateOrderStatus({ number, status: next as OrderStatus });
+        const res = await updateOrderStatus({ number, status: next as OrderStatus });
+        if (!res.ok) {
+          setValue(prev);
+          showToast("Order not found — it may have been removed.");
+          return;
+        }
         showToast(`Order ${number} → ${next}. Customer notified by email.`);
       } catch {
         setValue(prev);

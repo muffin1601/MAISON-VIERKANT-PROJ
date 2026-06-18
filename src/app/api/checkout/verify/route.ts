@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { verifyPaymentSignature } from "@/services/payments/razorpay";
 import { sendOrderConfirmation } from "@/services/orders/notify";
+import { rateLimit, clientIp } from "@/lib/rate-limit";
 
 const verifySchema = z.object({
   gatewayOrderId: z.string().min(1), // razorpay_order_id
@@ -17,6 +18,16 @@ const verifySchema = z.object({
  * the unique gatewayPaymentId index prevents a captured payment being reused.
  */
 export async function POST(req: Request) {
+  // Throttle signature-verification attempts (brute-force / replay guard), matching
+  // the other public checkout/auth routes.
+  const rl = rateLimit(`verify:${clientIp(req)}`, 30, 10 * 60 * 1000);
+  if (!rl.ok) {
+    return NextResponse.json(
+      { error: { message: "Too many attempts. Please try again shortly." } },
+      { status: 429, headers: { "Retry-After": String(rl.retryAfterSec) } },
+    );
+  }
+
   let body: unknown;
   try {
     body = await req.json();

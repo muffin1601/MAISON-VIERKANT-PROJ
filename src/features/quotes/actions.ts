@@ -77,7 +77,14 @@ export async function setQuoteStatus(id: string, status: string): Promise<{ ok: 
   if (!(QUOTE_STATUSES as readonly string[]).includes(status)) {
     throw new Error(`Invalid quote status: ${status}`);
   }
-  await prisma.quote.update({ where: { id }, data: { status } });
+  try {
+    await prisma.quote.update({ where: { id }, data: { status } });
+  } catch (err) {
+    if (err && typeof err === "object" && "code" in err && err.code === "P2025") {
+      return { ok: false };
+    }
+    throw err;
+  }
   await recordAudit({ actorId: user.id, action: "quote.status", entity: "Quote", entityId: id, after: { status } });
   revalidatePath("/admin/saved-quotes");
   return { ok: true };

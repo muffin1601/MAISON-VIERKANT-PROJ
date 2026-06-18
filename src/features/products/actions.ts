@@ -120,8 +120,9 @@ export async function saveProduct(input: ProductInput): Promise<{ id: string }> 
 export async function deleteProduct(id: string): Promise<{ ok: boolean }> {
   const user = await requirePermission("products.write");
   const existing = await prisma.product.findUnique({ where: { id }, select: { code: true, name: true } });
+  if (!existing) return { ok: false }; // already gone — avoid a raw P2025 throw
   await prisma.product.delete({ where: { id } });
-  await recordAudit({ actorId: user.id, action: "product.delete", entity: "Product", entityId: id, before: existing ?? undefined });
+  await recordAudit({ actorId: user.id, action: "product.delete", entity: "Product", entityId: id, before: existing });
   revalidatePath("/admin/products");
   revalidatePath("/collection");
   return { ok: true };

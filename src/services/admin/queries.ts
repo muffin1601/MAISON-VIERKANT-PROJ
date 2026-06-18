@@ -11,14 +11,16 @@ export interface DashStat {
 
 export async function getDashboard() {
   const pricing = await getActivePricing();
-  const [orders, productCount, inventories] = await Promise.all([
-    prisma.order.findMany({ include: { customer: true }, orderBy: { createdAt: "desc" } }),
+  // Aggregate in the DB instead of pulling every order/inventory row into memory.
+  const [revenueAgg, productCount, active, recentOrders, inventories] = await Promise.all([
+    prisma.order.aggregate({ _sum: { totalInr: true } }),
     prisma.product.count(),
+    prisma.order.count({ where: { status: { not: "DELIVERED" } } }),
+    prisma.order.findMany({ include: { customer: true }, orderBy: { createdAt: "desc" }, take: 6 }),
     prisma.inventory.findMany({ include: { product: true } }),
   ]);
 
-  const revenue = orders.reduce((s, o) => s + Number(o.totalInr), 0);
-  const active = orders.filter((o) => o.status !== "DELIVERED").length;
+  const revenue = Number(revenueAgg._sum.totalInr ?? 0);
   const low = inventories.filter((i) => i.quantity <= i.lowStockThreshold);
 
   const stats: DashStat[] = [
@@ -28,7 +30,7 @@ export async function getDashboard() {
     { label: "Low Stock", value: String(low.length), sub: "≤2 units" },
   ];
 
-  const recent = orders.slice(0, 6).map((o) => ({
+  const recent = recentOrders.map((o) => ({
     id: o.number,
     date: o.createdAt.toISOString().slice(0, 10),
     client: o.customer?.name ?? "—",

@@ -76,14 +76,32 @@ export async function applyPriceEntries(
     const code = e.code?.trim();
     if (!code || !(e.eur > 0)) continue;
 
-    const vId = variantByCode.get(code) ?? (variantByNorm.get(normCode(code)) || undefined);
-    if (vId) {
-      variantUpdates.push({ id: vId, eur: e.eur });
+    // Exact variant match wins.
+    const exactV = variantByCode.get(code);
+    if (exactV) {
+      variantUpdates.push({ id: exactV, eur: e.eur });
       continue;
     }
-    const pId = productByCode.get(code) ?? (productByNorm.get(normCode(code)) || undefined);
-    if (pId) {
-      productUpdates.push({ id: pId, eur: e.eur });
+    // Normalised variant match. `null` = ambiguous (>1 variant normalises here) →
+    // do NOT guess and do NOT fall through to a product; report as unmatched.
+    const normV = variantByNorm.get(normCode(code));
+    if (normV) {
+      variantUpdates.push({ id: normV, eur: e.eur });
+      continue;
+    }
+    if (normV === null) {
+      unmatched.push(code);
+      continue;
+    }
+    // Then product-level, with the same ambiguity guard.
+    const exactP = productByCode.get(code);
+    if (exactP) {
+      productUpdates.push({ id: exactP, eur: e.eur });
+      continue;
+    }
+    const normP = productByNorm.get(normCode(code));
+    if (normP) {
+      productUpdates.push({ id: normP, eur: e.eur });
       continue;
     }
     unmatched.push(code);
