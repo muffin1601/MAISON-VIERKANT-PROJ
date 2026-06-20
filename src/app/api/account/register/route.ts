@@ -12,7 +12,7 @@ import { logger } from "@/lib/logger";
  * in via NextAuth credentials after a 201.
  */
 export async function POST(req: Request) {
-  const rl = rateLimit(`register:${clientIp(req)}`, 5, 60 * 60 * 1000); // 5/hour/IP
+  const rl = await rateLimit(`register:${clientIp(req)}`, 5, 60 * 60 * 1000); // 5/hour/IP
   if (!rl.ok) {
     return NextResponse.json(
       { error: { message: "Too many attempts. Please try again later." } },

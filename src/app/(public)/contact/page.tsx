@@ -1,4 +1,12 @@
+import type { Metadata } from "next";
 import { ContactForm } from "./ContactForm";
+
+export const metadata: Metadata = {
+  title: "Contact",
+  description:
+    "Get in touch with Maison Vierkant for Atelier Vierkant clay vessels in India — trade enquiries, custom pieces and project consultations.",
+  alternates: { canonical: "/contact" },
+};
 
 export default function ContactPage() {
   return (

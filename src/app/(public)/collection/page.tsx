@@ -1,5 +1,13 @@
+import type { Metadata } from "next";
 import { getProducts, getActivePricing, cardPrice, cardMinINR } from "@/services/catalogue/catalogue";
 import { CollectionBrowser, type CardData } from "@/features/catalogue/CollectionBrowser";
+
+export const metadata: Metadata = {
+  title: "The Collection",
+  description:
+    "Browse the full range of handmade Atelier Vierkant clay vessels — planters, bowls, columns and seating — with India pricing.",
+  alternates: { canonical: "/collection" },
+};
 
 export const dynamic = "force-dynamic";
 

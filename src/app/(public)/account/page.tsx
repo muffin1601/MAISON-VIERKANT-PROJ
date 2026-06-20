@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { getCurrentUser } from "@/lib/auth/session";
 import { getCustomerWithOrders } from "@/services/account/queries";
+import { getPaymentSettings } from "@/services/settings/paymentSettings";
 import { OrderList } from "@/features/account/OrderList";
 import { AccountSignOut } from "@/features/account/AccountSignOut";
 import { AccountNav } from "@/features/account/AccountNav";
@@ -14,7 +15,10 @@ export default async function AccountPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/account/login?callbackUrl=/account");
 
-  const customer = await getCustomerWithOrders(user.id);
+  const [customer, settings] = await Promise.all([
+    getCustomerWithOrders(user.id),
+    getPaymentSettings(),
+  ]);
   const recent = customer?.orders.slice(0, 3) ?? [];
 
   return (
@@ -50,7 +54,11 @@ export default async function AccountPage() {
             View all →
           </Link>
         </div>
-        <OrderList orders={recent} />
+        <OrderList
+          orders={recent}
+          settings={settings}
+          customerEmail={user.email ?? customer?.email ?? ""}
+        />
       </div>
     </div>
   );

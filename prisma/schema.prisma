@@ -25,6 +25,7 @@ model User {
   auditLogs     AuditLog[]
   customer      Customer?  // CRM record for storefront customers (role CUSTOMER)
   resetTokens   PasswordResetToken[]
+  reviewedPayments PaymentSubmission[] @relation("ReviewedPayments")
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
 }
@@ -219,6 +220,7 @@ model Customer {
   orders    Order[]
   quotes    Quote[]
   notes     CustomerNote[]
+  paymentSubmissions PaymentSubmission[]
   createdAt  DateTime      @default(now())
 }
 
@@ -263,8 +265,43 @@ model Order {
   items          OrderItem[]
   invoice        Invoice?
   payments       Payment[]
+  paymentSubmissions PaymentSubmission[]
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
+}
+
+/**
+ * Customer-submitted proof of an OFFLINE payment (bank transfer / UPI / NEFT / RTGS /
+ * wire). Reviewed and approved/rejected by an admin. The proof file lives in a PRIVATE
+ * Supabase bucket; only the owning customer and authorized admins can fetch a signed URL.
+ */
+model PaymentSubmission {
+  id              String    @id @default(cuid())
+  orderId         String
+  order           Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  customerId      String?
+  customer        Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  method          String    // BANK_TRANSFER | UPI | NEFT | RTGS | WIRE
+  transactionId   String    // bank/UPI reference number entered by the customer
+  amountInr       Decimal   @db.Decimal(12, 2)
+  paidAt          DateTime  // date the customer made the payment
+  notes           String?
+  proofUrl        String?   // public URL (only set if a public bucket is used)
+  proofBucket     String?
+  proofKey        String?   // object path in the private bucket — fetched via signed URL
+  proofMime       String?
+  proofSizeBytes  Int?
+  status          String    @default("SUBMITTED") // SUBMITTED | VERIFIED | REJECTED
+  rejectionReason String?
+  reviewedById    String?
+  reviewedBy      User?     @relation("ReviewedPayments", fields: [reviewedById], references: [id])
+  reviewedAt      DateTime?
+  submitterIp     String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  @@index([orderId])
+  @@index([customerId])
+  @@index([status])
 }
 
 model OrderItem {

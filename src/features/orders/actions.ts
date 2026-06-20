@@ -4,17 +4,13 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { withPermission } from "@/lib/auth/session";
 import { sendOrderStatusEmail } from "@/lib/email/notify";
+import { recordAudit } from "@/lib/audit";
+import { ADMIN_ASSIGNABLE_STATUSES } from "@/lib/orderStatus";
 import { logger } from "@/lib/logger";
 
-export const ORDER_STATUSES = [
-  "PENDING",
-  "CONFIRMED",
-  "PROCESSING",
-  "SHIPPED",
-  "DELIVERED",
-  "CANCELLED",
-  "REFUNDED",
-] as const;
+// Admin-assignable order statuses (offline-payment lifecycle). Payment-driven
+// transitions (PAYMENT_SUBMITTED / PAYMENT_REJECTED) are set by the payment flow.
+export const ORDER_STATUSES = ADMIN_ASSIGNABLE_STATUSES;
 
 export type OrderStatus = (typeof ORDER_STATUSES)[number];
 
@@ -25,11 +21,15 @@ export type OrderStatus = (typeof ORDER_STATUSES)[number];
  */
 export const updateOrderStatus = withPermission(
   "orders.write",
-  async (_user, input: { number: string; status: OrderStatus; trackingNumber?: string }) => {
+  async (user, input: { number: string; status: OrderStatus; trackingNumber?: string }) => {
     if (!ORDER_STATUSES.includes(input.status)) {
       throw new Error("Invalid status");
     }
     let order;
+    const prev = await prisma.order.findUnique({
+      where: { number: input.number },
+      select: { status: true },
+    });
     try {
       order = await prisma.order.update({
         where: { number: input.number },
@@ -59,7 +59,17 @@ export const updateOrderStatus = withPermission(
       }).catch((err) => logger.error({ err }, "status email failed"));
     }
 
+    await recordAudit({
+      actorId: user.id,
+      action: "order.status",
+      entity: "Order",
+      entityId: order.number,
+      before: { status: prev?.status },
+      after: { status: order.status, trackingNumber: order.trackingNumber },
+    });
+
     revalidatePath("/admin/orders");
+    revalidatePath("/admin/dashboard");
     return { ok: true, status: order.status };
   },
 );

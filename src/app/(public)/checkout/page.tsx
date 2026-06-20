@@ -1,13 +1,17 @@
 import { getProducts, getActivePricing } from "@/services/catalogue/catalogue";
 import { calcINR } from "@/services/pricing/PricingService";
-import { env } from "@/lib/env";
+import { getPaymentSettings } from "@/services/settings/paymentSettings";
 import type { PriceMap } from "@/features/cart/CartView";
 import { CheckoutView } from "@/features/checkout/CheckoutView";
 
 export const dynamic = "force-dynamic";
 
 export default async function CheckoutPage() {
-  const [products, pricing] = await Promise.all([getProducts(), getActivePricing()]);
+  const [products, pricing, settings] = await Promise.all([
+    getProducts(),
+    getActivePricing(),
+    getPaymentSettings(),
+  ]);
   const priceMap: PriceMap = {};
   for (const p of products) {
     const info = { series: p.series, img: p.imgs[0] ?? "" };
@@ -20,5 +24,5 @@ export default async function CheckoutPage() {
     }
     priceMap[`${p.code}|${p.name}`] = { unit: calcINR(p.eurPrice, pricing), dims: p.dims, ...info };
   }
-  return <CheckoutView priceMap={priceMap} codEnabled={env.COD_ENABLED} />;
+  return <CheckoutView priceMap={priceMap} settings={settings} />;
 }

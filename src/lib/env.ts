@@ -17,7 +17,7 @@ const schema = z.object({
   APP_URL: z.string().url().optional(),
   // ---- Email (Resend) ----
   RESEND_API_KEY: z.string().optional(),
-  EMAIL_FROM: z.string().default("Maison Vierkant <onboarding@resend.dev>"),
+  EMAIL_FROM: z.string().default("Maison Vierkant <noreply@maison-vierkant.in>"),
   ADMIN_NOTIFY_EMAIL: z.string().email().optional(),
   // Razorpay (server-only secrets). The public key id is also exposed below for the browser checkout.
   RAZORPAY_KEY_ID: z.string().optional(),
@@ -29,9 +29,30 @@ const schema = z.object({
     .default("true")
     .transform((v) => v === "true"),
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
+  // ---- Rate limiting (Upstash Redis, optional) ----
+  // Empty string in .env means "unset" — coerce it to undefined before url-validation.
+  UPSTASH_REDIS_REST_URL: z.preprocess(
+    (v) => (v === "" ? undefined : v),
+    z.string().url().optional(),
+  ),
+  UPSTASH_REDIS_REST_TOKEN: z.string().optional(),
 });
 
 export const env = schema.parse(process.env);
+
+// Fail fast in production if the auth secret was left as a dev placeholder —
+// a weak/shared secret silently breaks session decoding across instances.
+if (
+  env.NODE_ENV === "production" &&
+  (!env.NEXTAUTH_SECRET || env.NEXTAUTH_SECRET.length < 32 || env.NEXTAUTH_SECRET.includes("dev-secret"))
+) {
+  throw new Error(
+    "NEXTAUTH_SECRET must be a strong (>=32 char) value in production. Generate one with: openssl rand -base64 32",
+  );
+}
+
+/** True when a global Upstash Redis limiter is configured (else in-memory fallback). */
+export const upstashReady = !!env.UPSTASH_REDIS_REST_URL && !!env.UPSTASH_REDIS_REST_TOKEN;
 
 /** True when real Razorpay credentials are configured (gateway is live, not mock). */
 export const razorpayReady =
@@ -41,4 +62,5 @@ export const razorpayReady =
 export const emailReady = !!env.RESEND_API_KEY;
 
 /** Public base URL for links in emails. */
-export const appUrl = env.APP_URL ?? env.NEXTAUTH_URL ?? "http://localhost:3000";
+export const appUrl =
+  env.APP_URL ?? env.NEXTAUTH_URL ?? (env.NODE_ENV === "production" ? "https://www.maison-vierkant.in" : "http://localhost:3000");

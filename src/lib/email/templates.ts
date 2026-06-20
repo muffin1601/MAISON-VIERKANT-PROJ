@@ -178,3 +178,115 @@ export function adminNewOrderEmail(opts: {
     ),
   };
 }
+
+// ---------------------------------------------------------------------------
+// Offline-payment templates
+// ---------------------------------------------------------------------------
+
+export interface BankDetails {
+  bankName: string;
+  accountHolder: string;
+  accountNumber: string;
+  ifsc: string;
+  swift: string;
+  branch: string;
+  upiId: string;
+  instructions: string;
+}
+
+function bankBlock(b: BankDetails): string {
+  const row = (k: string, v?: string | null) =>
+    v
+      ? `<tr><td style="padding:5px 14px 5px 0;font-size:12px;color:#8c847a;white-space:nowrap;">${k}</td><td style="padding:5px 0;font-size:13px;color:${INK};font-weight:600;">${esc(v)}</td></tr>`
+      : "";
+  return `<div style="background:#faf7f1;border:1px solid #eee5d6;border-radius:5px;padding:14px 16px;margin:6px 0 16px;">
+    <table role="presentation">${row("Bank", b.bankName)}${row("Account Holder", b.accountHolder)}${row("Account No.", b.accountNumber)}${row("IFSC", b.ifsc)}${row("SWIFT", b.swift)}${row("Branch", b.branch)}${row("UPI ID", b.upiId)}</table>
+  </div>`;
+}
+
+export function orderCreatedOfflineEmail(opts: {
+  name: string;
+  number: string;
+  items: OrderEmailLine[];
+  totalInr: number;
+  advanceInr: number;
+  bank: BankDetails;
+  orderUrl?: string;
+}): { subject: string; html: string } {
+  const { name, number, items, totalInr, advanceInr, bank, orderUrl } = opts;
+  return {
+    subject: `Order ${number} received — payment instructions`,
+    html: layout(
+      "Order Received",
+      p(`Thank you, ${esc(name)}. Your order has been placed and is reserved pending payment.`) +
+        `<p style="font-size:12px;color:#8c847a;margin:0 0 4px;">Order number</p>
+         <p style="font-size:16px;color:${GOLD};margin:0 0 16px;font-weight:600;">${esc(number)}</p>` +
+        itemsTable(items) +
+        `<table role="presentation" width="100%"><tr><td style="font-size:14px;">Order total</td><td align="right" style="font-size:14px;font-weight:600;">${inr(totalInr)}</td></tr>
+          <tr><td style="font-size:14px;color:${GOLD};padding-top:4px;">Advance due now (50%)</td><td align="right" style="font-size:15px;color:${GOLD};font-weight:700;padding-top:4px;">${inr(advanceInr)}</td></tr></table>` +
+        `<h2 style="font-size:15px;font-weight:600;margin:22px 0 6px;color:${INK};">How to pay</h2>` +
+        bankBlock(bank) +
+        p(`<strong>Use your order number ${esc(number)} as the payment reference.</strong> ${esc(bank.instructions || "")}`) +
+        (orderUrl ? `<p style="margin:18px 0 0;">${button(orderUrl, "Submit Payment Proof")}</p>` : "") +
+        p("<br/>Once we verify your payment, production begins. Lead time 10–14 weeks. Balance is payable before dispatch from Ostend."),
+    ),
+  };
+}
+
+export function adminPaymentSubmittedEmail(opts: {
+  number: string;
+  name: string;
+  amountInr: number;
+  method: string;
+  transactionId: string;
+}): { subject: string; html: string } {
+  const { number, name, amountInr, method, transactionId } = opts;
+  return {
+    subject: `Payment submitted for ${number} — ${inr(amountInr)}`,
+    html: layout(
+      "Payment Awaiting Review",
+      p(`<strong>${esc(name)}</strong> submitted a payment for order <strong>${esc(number)}</strong>.`) +
+        p(
+          `Amount: <strong>${inr(amountInr)}</strong> · Method: ${esc(method)} · Ref: ${esc(transactionId)}`,
+        ) +
+        p("Review the proof and approve or reject it in the Payments queue."),
+    ),
+  };
+}
+
+export function paymentApprovedEmail(opts: {
+  name: string;
+  number: string;
+  amountInr: number;
+  orderUrl?: string;
+}): { subject: string; html: string } {
+  const { name, number, amountInr, orderUrl } = opts;
+  return {
+    subject: `Payment verified for ${number}`,
+    html: layout(
+      "Payment Verified",
+      p(`Good news, ${esc(name)} — we've verified your payment of <strong>${inr(amountInr)}</strong> for order <strong>${esc(number)}</strong>.`) +
+        p("Your order now moves into production. We'll keep you updated at each stage.") +
+        (orderUrl ? `<p style="margin:18px 0 0;">${button(orderUrl, "View Order")}</p>` : ""),
+    ),
+  };
+}
+
+export function paymentRejectedEmail(opts: {
+  name: string;
+  number: string;
+  reason: string;
+  orderUrl?: string;
+}): { subject: string; html: string } {
+  const { name, number, reason, orderUrl } = opts;
+  return {
+    subject: `Action needed: payment for ${number}`,
+    html: layout(
+      "Payment Could Not Be Verified",
+      p(`Hello ${esc(name)}, we were unable to verify your payment for order <strong>${esc(number)}</strong>.`) +
+        `<div style="background:#fbeaea;border:1px solid #e3b6b6;border-radius:5px;padding:12px 14px;margin:6px 0 16px;font-size:13px;color:#8b2c2c;">${esc(reason)}</div>` +
+        p("Please re-submit your payment proof with the correct details. If you have questions, just reply to this email.") +
+        (orderUrl ? `<p style="margin:18px 0 0;">${button(orderUrl, "Re-submit Payment")}</p>` : ""),
+    ),
+  };
+}

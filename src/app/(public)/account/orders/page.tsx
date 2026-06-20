@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { getCurrentUser } from "@/lib/auth/session";
 import { getCustomerWithOrders } from "@/services/account/queries";
+import { getPaymentSettings } from "@/services/settings/paymentSettings";
 import { OrderList } from "@/features/account/OrderList";
 
 export const metadata: Metadata = { title: "Order History" };
@@ -12,7 +13,10 @@ export default async function AccountOrdersPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/account/login?callbackUrl=/account/orders");
 
-  const customer = await getCustomerWithOrders(user.id);
+  const [customer, settings] = await Promise.all([
+    getCustomerWithOrders(user.id),
+    getPaymentSettings(),
+  ]);
 
   return (
     <div className="page active">
@@ -23,7 +27,11 @@ export default async function AccountOrdersPage() {
         <h1 className="st" style={{ margin: "10px 0 24px" }}>
           Order <em>History</em>
         </h1>
-        <OrderList orders={customer?.orders ?? []} />
+        <OrderList
+          orders={customer?.orders ?? []}
+          settings={settings}
+          customerEmail={user.email ?? customer?.email ?? ""}
+        />
       </div>
     </div>
   );

@@ -38,8 +38,41 @@ export const MAX_DOC_BYTES = 25 * 1024 * 1024; // 25 MB
 export const MAX_PDF_BYTES = 25 * 1024 * 1024;
 export const MAX_CAD_BYTES = 50 * 1024 * 1024;
 
+// Payment proof: customer-uploaded receipt/screenshot. JPG/PNG/PDF only, 10 MB.
+export const PROOF_MIME = ["image/jpeg", "image/png", "application/pdf"] as const;
+export const MAX_PROOF_BYTES = 10 * 1024 * 1024;
+
+/**
+ * Sniff the leading bytes of an upload to confirm it really is a JPG/PNG/PDF, rather
+ * than trusting the client-declared Content-Type. Returns the detected mime or null.
+ */
+export function sniffProofMime(bytes: Uint8Array): "image/jpeg" | "image/png" | "application/pdf" | null {
+  if (bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return "image/jpeg";
+  if (
+    bytes.length >= 8 &&
+    bytes[0] === 0x89 &&
+    bytes[1] === 0x50 &&
+    bytes[2] === 0x4e &&
+    bytes[3] === 0x47 &&
+    bytes[4] === 0x0d &&
+    bytes[5] === 0x0a &&
+    bytes[6] === 0x1a &&
+    bytes[7] === 0x0a
+  )
+    return "image/png";
+  if (bytes.length >= 5 && bytes[0] === 0x25 && bytes[1] === 0x50 && bytes[2] === 0x44 && bytes[3] === 0x46)
+    return "application/pdf"; // %PDF
+  return null;
+}
+
 /** Upload categories → Supabase bucket + rules. `category` is what clients send. */
-export type UploadCategory = "product-image" | "drawing" | "document" | "catalogue" | "price-list";
+export type UploadCategory =
+  | "product-image"
+  | "drawing"
+  | "document"
+  | "catalogue"
+  | "price-list"
+  | "payment-qr";
 
 export interface CategoryRule {
   bucket: string;
@@ -61,6 +94,8 @@ export const CATEGORY_RULES: Record<UploadCategory, CategoryRule> = {
   document: { bucket: "product-documents", allowed: DOC_MIME, maxBytes: MAX_DOC_BYTES, folder: "documents" },
   catalogue: { bucket: "catalogues", allowed: DOC_MIME, maxBytes: MAX_DOC_BYTES, folder: "catalogues" },
   "price-list": { bucket: "uploads", allowed: PDF_MIME, maxBytes: MAX_PDF_BYTES, folder: "price-lists" },
+  // Public bucket: the UPI QR is shown to every customer at checkout.
+  "payment-qr": { bucket: "uploads", allowed: IMAGE_MIME, maxBytes: MAX_IMAGE_BYTES, folder: "payment-qr" },
 };
 
 export interface UploadValidation {

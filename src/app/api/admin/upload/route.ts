@@ -19,6 +19,7 @@ const UPLOADED_KIND: Record<UploadCategory, string> = {
   document: "DOCUMENT",
   catalogue: "DOCUMENT",
   "price-list": "PRICE_LIST",
+  "payment-qr": "MEDIA",
 };
 
 /**

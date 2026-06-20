@@ -1,3 +1,12 @@
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "About",
+  description:
+    "Maison Vierkant brings Atelier Vierkant's handmade Belgian clay vessels to India, curated by Watcon. Our story, craft and partnership.",
+  alternates: { canonical: "/about" },
+};
+
 export default function AboutPage() {
   return (
     <div id="page-about" className="page active">

@@ -2,6 +2,7 @@ import { getCurrentUser } from "@/lib/auth/session";
 import { hasPermission } from "@/lib/auth/rbac";
 import { getDashboard } from "@/services/admin/queries";
 import { fmt } from "@/lib/format";
+import { statusMeta } from "@/lib/orderStatus";
 
 export const dynamic = "force-dynamic";
 
@@ -60,7 +61,18 @@ export default async function DashboardPage() {
                     {fmt(o.total)}
                   </td>
                   <td>
-                    <span className={`sbadge s-${o.status}`}>{o.status}</span>
+                    <span
+                      style={{
+                        fontSize: 10,
+                        color: statusMeta(o.status).color,
+                        border: `1px solid ${statusMeta(o.status).color}`,
+                        borderRadius: 20,
+                        padding: "2px 9px",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {statusMeta(o.status).label}
+                    </span>
                   </td>
                 </tr>
               ))}

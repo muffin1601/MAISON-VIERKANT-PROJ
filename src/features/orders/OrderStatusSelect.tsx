@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { updateOrderStatus, ORDER_STATUSES, type OrderStatus } from "./actions";
+import { statusMeta } from "@/lib/orderStatus";
 import { showToast } from "@/lib/toast";
 
 /** Inline admin control to change an order's status (emails the customer). */
@@ -16,9 +17,25 @@ export function OrderStatusSelect({
 }) {
   const [value, setValue] = useState(status.toUpperCase());
   const [pending, startTransition] = useTransition();
+  const meta = statusMeta(value);
 
   if (!canWrite) {
-    return <span className={`sbadge s-${status.toLowerCase()}`}>{status}</span>;
+    return (
+      <span
+        style={{
+          fontSize: 10,
+          letterSpacing: ".06em",
+          color: meta.color,
+          border: `1px solid ${meta.color}`,
+          borderRadius: 20,
+          padding: "3px 10px",
+          background: "#fff",
+          whiteSpace: "nowrap",
+        }}
+      >
+        {meta.label}
+      </span>
+    );
   }
 
   function onChange(next: string) {
@@ -32,7 +49,7 @@ export function OrderStatusSelect({
           showToast("Order not found — it may have been removed.");
           return;
         }
-        showToast(`Order ${number} → ${next}. Customer notified by email.`);
+        showToast(`Order ${number} → ${statusMeta(next).label}. Customer notified by email.`);
       } catch {
         setValue(prev);
         showToast("Could not update status.");
@@ -40,18 +57,30 @@ export function OrderStatusSelect({
     });
   }
 
+  // If the order is in a payment-driven or legacy status not in the assignable set,
+  // surface it as a selectable option too so it displays correctly.
+  const options = ORDER_STATUSES.includes(value as OrderStatus)
+    ? [...ORDER_STATUSES]
+    : [value, ...ORDER_STATUSES];
+
   return (
     <select
       value={value}
       disabled={pending}
       onChange={(e) => onChange(e.target.value)}
-      className={`sbadge s-${value.toLowerCase()}`}
-      style={{ border: "1px solid var(--cream3)", borderRadius: 4, padding: "4px 8px", fontSize: 11 }}
+      style={{
+        border: `1px solid ${meta.color}`,
+        color: meta.color,
+        borderRadius: 20,
+        padding: "4px 10px",
+        fontSize: 11,
+        background: "#fff",
+      }}
       aria-label={`Status for order ${number}`}
     >
-      {ORDER_STATUSES.map((s) => (
+      {options.map((s) => (
         <option key={s} value={s}>
-          {s}
+          {statusMeta(s).label}
         </option>
       ))}
     </select>

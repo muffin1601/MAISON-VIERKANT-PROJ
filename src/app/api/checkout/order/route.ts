@@ -1,17 +1,14 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { env, razorpayReady } from "@/lib/env";
 import { getActivePricing } from "@/services/catalogue/catalogue";
 import { calcBreakdown } from "@/services/pricing/PricingService";
-import { createRazorpayOrder } from "@/services/payments/razorpay";
 import { getCurrentUser } from "@/lib/auth/session";
-import { sendOrderConfirmation } from "@/services/orders/notify";
+import { sendOfflineOrderCreated } from "@/services/orders/notify";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
 
 const orderSchema = z.object({
   number: z.string().min(1),
-  paymentMethod: z.enum(["razorpay", "cod"]).default("razorpay"),
   customer: z.object({
     name: z.string().min(1),
     email: z.string().email().optional().or(z.literal("")).default(""),
@@ -38,19 +35,19 @@ const orderSchema = z.object({
 });
 
 /**
- * Create a B2C order and initiate payment.
+ * Create a B2C order for OFFLINE payment (bank transfer / UPI / NEFT / RTGS / wire).
+ *
+ * No money is taken online. The order is created with status PENDING_PAYMENT; the
+ * customer then transfers the advance and uploads proof (POST /api/account/payments),
+ * which an admin verifies.
  *
  * Security/correctness guarantees:
- *  - All prices are recomputed server-side from the active pricing rule + stored
- *    EUR. The client-sent total is never trusted.
- *  - Order numbers are unique (DB constraint) → re-submitting the same checkout
- *    cannot create duplicate orders.
- *  - For Razorpay, a gateway order is created and its id stored on a PENDING
- *    Payment row; capture is confirmed later in /api/checkout/verify (or the
- *    webhook), never here.
+ *  - All prices are recomputed server-side from the active pricing rule + stored EUR.
+ *    The client-sent total is never trusted.
+ *  - Order numbers are unique (DB constraint) → re-submitting cannot duplicate orders.
  */
 export async function POST(req: Request) {
-  const rl = rateLimit(`checkout:${clientIp(req)}`, 20, 10 * 60 * 1000); // 20 / 10 min / IP
+  const rl = await rateLimit(`checkout:${clientIp(req)}`, 20, 10 * 60 * 1000); // 20 / 10 min / IP
   if (!rl.ok) {
     return NextResponse.json(
       { error: { message: "Too many checkout attempts. Please try again shortly." } },
@@ -71,37 +68,35 @@ export async function POST(req: Request) {
       { status: 422 },
     );
   }
-  const { number, customer, items, paymentMethod } = parsed.data;
-
-  if (paymentMethod === "cod" && !env.COD_ENABLED) {
-    return NextResponse.json(
-      { error: { message: "Cash on Delivery is not available." } },
-      { status: 400 },
-    );
-  }
+  const { number, customer, items } = parsed.data;
 
   try {
-    // Idempotency: if this order number already exists, return it rather than duplicating.
+    // Idempotency: if this order number already exists, return it ONLY to the same
+    // customer that owns it (or a guest who created it). Never echo another
+    // customer's order id/amounts to a stranger replaying a guessed number.
     const existing = await prisma.order.findUnique({
       where: { number },
-      include: { payments: true },
+      include: { customer: { select: { userId: true } } },
     });
     if (existing) {
-      const pay = existing.payments[0];
+      const replayUser = await getCurrentUser();
+      const ownsIt =
+        // guest order (no linked account) → only the original guest reaches here on retry
+        !existing.customer?.userId ||
+        (replayUser?.role === "CUSTOMER" && replayUser.id === existing.customer.userId);
+      if (!ownsIt) {
+        return NextResponse.json(
+          { error: { message: "This order was already submitted." } },
+          { status: 409 },
+        );
+      }
       return NextResponse.json(
         {
           data: {
             orderId: existing.id,
             number: existing.number,
-            payment: pay
-              ? {
-                  provider: pay.provider.toLowerCase(),
-                  gatewayOrderId: pay.gatewayOrderId,
-                  amountInr: Number(pay.amountInr),
-                  keyId: razorpayReady ? env.RAZORPAY_KEY_ID : undefined,
-                  currency: "INR",
-                }
-              : null,
+            totalInr: Number(existing.totalInr),
+            advanceInr: Number(existing.advanceInr),
           },
         },
         { status: 200 },
@@ -189,7 +184,6 @@ export async function POST(req: Request) {
       ? await prisma.customer.update({
           where: { id: linkedCustomer.id },
           data: {
-            // keep CRM contact details fresh from checkout, fill only when missing
             phone: linkedCustomer.phone ?? customer.phone ?? null,
             company: linkedCustomer.company ?? customer.company ?? null,
             ...(addressCreate ? { addresses: addressCreate } : {}),
@@ -205,14 +199,11 @@ export async function POST(req: Request) {
           },
         });
 
-    // For COD nothing is charged online; for online we charge the 50% advance.
-    const useRazorpay = paymentMethod === "razorpay" && razorpayReady;
-
     const order = await prisma.order.create({
       data: {
         number,
         customerId: cust.id,
-        status: "PENDING", // becomes CONFIRMED once payment is captured (or immediately for COD)
+        status: "PENDING_PAYMENT",
         subtotalInr,
         gstInr,
         totalInr,
@@ -221,91 +212,16 @@ export async function POST(req: Request) {
       },
     });
 
-    // ---- Cash on Delivery: no gateway, order is confirmed immediately ----
-    if (paymentMethod === "cod") {
-      await prisma.$transaction([
-        prisma.payment.create({
-          data: {
-            orderId: order.id,
-            provider: "COD",
-            method: "cod",
-            type: "ADVANCE",
-            status: "PENDING", // collected on delivery
-            amountInr: advanceInr,
-          },
-        }),
-        prisma.order.update({ where: { id: order.id }, data: { status: "CONFIRMED" } }),
-      ]);
-      await sendOrderConfirmation(order.id, "cod");
-      return NextResponse.json(
-        {
-          data: {
-            orderId: order.id,
-            number,
-            payment: { provider: "cod", amountInr: advanceInr, currency: "INR" },
-          },
-        },
-        { status: 201 },
-      );
-    }
+    // Email the customer payment instructions + notify admin (fire-and-forget).
+    await sendOfflineOrderCreated(order.id);
 
-    // ---- Razorpay (live keys configured) ----
-    if (useRazorpay) {
-      const rzpOrder = await createRazorpayOrder({
-        amountInr: advanceInr,
-        receipt: number,
-        notes: { orderId: order.id, orderNumber: number },
-      });
-      await prisma.payment.create({
-        data: {
-          orderId: order.id,
-          provider: "RAZORPAY",
-          type: "ADVANCE",
-          status: "PENDING",
-          amountInr: advanceInr,
-          gatewayOrderId: rzpOrder.id,
-        },
-      });
-      return NextResponse.json(
-        {
-          data: {
-            orderId: order.id,
-            number,
-            payment: {
-              provider: "razorpay",
-              keyId: env.RAZORPAY_KEY_ID,
-              gatewayOrderId: rzpOrder.id,
-              amountInr: advanceInr,
-              currency: "INR",
-            },
-          },
-        },
-        { status: 201 },
-      );
-    }
-
-    // ---- Mock provider (no live keys in this environment) ----
-    // Lets local/preview deployments complete checkout end-to-end. In production
-    // with PAYMENT_PROVIDER=razorpay + keys, this branch is never reached.
-    await prisma.$transaction([
-      prisma.payment.create({
-        data: {
-          orderId: order.id,
-          provider: "MOCK",
-          type: "ADVANCE",
-          status: "CAPTURED",
-          amountInr: advanceInr,
-        },
-      }),
-      prisma.order.update({ where: { id: order.id }, data: { status: "CONFIRMED" } }),
-    ]);
-    await sendOrderConfirmation(order.id, "mock");
     return NextResponse.json(
       {
         data: {
           orderId: order.id,
           number,
-          payment: { provider: "mock", amountInr: advanceInr, currency: "INR" },
+          totalInr,
+          advanceInr,
         },
       },
       { status: 201 },

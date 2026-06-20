@@ -13,6 +13,8 @@ export type Permission =
   | "inventory.write"
   | "orders.read"
   | "orders.write"
+  | "payments.read"
+  | "payments.write"
   | "leads.read"
   | "leads.write"
   | "customers.read"
@@ -47,6 +49,8 @@ export const ADMIN_NAV: AdminNavItem[] = [
   { href: "/admin/products", label: "Products", permission: "products.read" },
   { href: "/admin/stock", label: "Stock", permission: "inventory.read" },
   { href: "/admin/orders", label: "Orders", permission: "orders.read" },
+  { href: "/admin/payments", label: "Payments", permission: "payments.read" },
+  { href: "/admin/payment-settings", label: "Payment Settings", permission: "settings.manage" },
   { href: "/admin/leads", label: "Catalogue Leads", permission: "leads.read" },
   { href: "/admin/customers", label: "Customers", permission: "customers.read" },
   { href: "/admin/quotes", label: "Create Quote", permission: "quotes.write" },

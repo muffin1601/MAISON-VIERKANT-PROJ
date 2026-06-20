@@ -10,6 +10,7 @@ export async function getCustomerWithOrders(userId: string) {
         include: {
           items: { include: { product: true, variant: true } },
           payments: true,
+          paymentSubmissions: { orderBy: { createdAt: "desc" } },
           shipAddress: true,
         },
       },

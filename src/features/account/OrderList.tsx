@@ -1,36 +1,38 @@
 import { fmt } from "@/lib/format";
 import type { CustomerWithOrders } from "@/services/account/queries";
-
-const STATUS_COLORS: Record<string, string> = {
-  PENDING: "#a07a2a",
-  CONFIRMED: "#2e7d32",
-  PROCESSING: "#1565c0",
-  SHIPPED: "#1565c0",
-  DELIVERED: "#2e7d32",
-  CANCELLED: "#b71c1c",
-  REFUNDED: "#6a1b9a",
-};
+import { statusMeta } from "@/lib/orderStatus";
+import { OrderPaymentActions } from "@/features/account/OrderPaymentActions";
+import type { PaymentSettings } from "@/services/settings/paymentSettings";
 
 function StatusBadge({ status }: { status: string }) {
-  const color = STATUS_COLORS[status] ?? "#6b6b6b";
+  const meta = statusMeta(status);
   return (
     <span
       style={{
         fontSize: 10,
         letterSpacing: ".08em",
-        color,
-        border: `1px solid ${color}`,
+        color: meta.color,
+        border: `1px solid ${meta.color}`,
         borderRadius: 20,
         padding: "3px 10px",
         background: "#fff",
+        whiteSpace: "nowrap",
       }}
     >
-      {status}
+      {meta.label}
     </span>
   );
 }
 
-export function OrderList({ orders }: { orders: CustomerWithOrders["orders"] }) {
+export function OrderList({
+  orders,
+  settings,
+  customerEmail,
+}: {
+  orders: CustomerWithOrders["orders"];
+  settings: PaymentSettings;
+  customerEmail: string;
+}) {
   if (orders.length === 0) {
     return (
       <div style={{ fontSize: 13, color: "var(--ink4)", padding: "24px 0" }}>
@@ -41,7 +43,8 @@ export function OrderList({ orders }: { orders: CustomerWithOrders["orders"] }) 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       {orders.map((o) => {
-        const captured = o.payments.some((p) => p.status === "CAPTURED");
+        // Latest payment submission (the query orders them desc).
+        const submission = o.paymentSubmissions?.[0] ?? null;
         return (
           <div
             key={o.id}
@@ -76,10 +79,7 @@ export function OrderList({ orders }: { orders: CustomerWithOrders["orders"] }) 
             </div>
             <div style={{ borderTop: "1px solid var(--cream2)", paddingTop: 10 }}>
               {o.items.map((it) => (
-                <div
-                  key={it.id}
-                  style={{ fontSize: 12, color: "var(--ink3)", padding: "2px 0" }}
-                >
+                <div key={it.id} style={{ fontSize: 12, color: "var(--ink3)", padding: "2px 0" }}>
                   {it.product.name}
                   {it.variant ? ` · ${it.variant.code}` : ""} · {it.finish} · ×{it.qty} —{" "}
                   {fmt(Number(it.unitPriceInr) * it.qty)}
@@ -95,11 +95,31 @@ export function OrderList({ orders }: { orders: CustomerWithOrders["orders"] }) 
               }}
             >
               <span style={{ color: "var(--ink4)" }}>
-                {captured ? "Advance paid" : "Advance pending"}
+                Advance due: {fmt(Number(o.advanceInr))}
                 {o.trackingNumber ? ` · Tracking ${o.trackingNumber}` : ""}
               </span>
               <span style={{ fontWeight: 600 }}>{fmt(Number(o.totalInr))}</span>
             </div>
+
+            <OrderPaymentActions
+              orderNumber={o.number}
+              orderStatus={o.status}
+              amountDue={Number(o.advanceInr)}
+              totalInr={Number(o.totalInr)}
+              customerEmail={customerEmail}
+              settings={settings}
+              submission={
+                submission
+                  ? {
+                      status: submission.status,
+                      rejectionReason: submission.rejectionReason,
+                      amountInr: Number(submission.amountInr),
+                      method: submission.method,
+                      transactionId: submission.transactionId,
+                    }
+                  : null
+              }
+            />
           </div>
         );
       })}

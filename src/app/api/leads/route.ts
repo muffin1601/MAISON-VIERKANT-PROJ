@@ -6,7 +6,7 @@ import { notifyAdminNewLead } from "@/lib/email/notify";
 
 /** Public lead capture (catalogue request + contact form). */
 export async function POST(req: Request) {
-  const rl = rateLimit(`leads:${clientIp(req)}`, 10, 10 * 60 * 1000); // 10 / 10 min / IP
+  const rl = await rateLimit(`leads:${clientIp(req)}`, 10, 10 * 60 * 1000); // 10 / 10 min / IP
   if (!rl.ok) {
     return NextResponse.json(
       { error: { message: "Too many submissions. Please try again shortly." } },

@@ -36,6 +36,8 @@ const PERMISSIONS = [
   "inventory.write",
   "orders.read",
   "orders.write",
+  "payments.read",
+  "payments.write",
   "leads.read",
   "leads.write",
   "customers.read",
@@ -69,6 +71,8 @@ const ROLES: { key: string; label: string; perms: string[] | "*" }[] = [
       "leads.read",
       "leads.write",
       "orders.read",
+      "payments.read",
+      "payments.write",
     ],
   },
   {

@@ -12,7 +12,7 @@ import { logger } from "@/lib/logger";
  * stored and the raw token is emailed.
  */
 export async function POST(req: Request) {
-  const rl = rateLimit(`forgot:${clientIp(req)}`, 5, 60 * 60 * 1000);
+  const rl = await rateLimit(`forgot:${clientIp(req)}`, 5, 60 * 60 * 1000);
   if (!rl.ok) {
     return NextResponse.json(
       { error: { message: "Too many requests. Please try again later." } },

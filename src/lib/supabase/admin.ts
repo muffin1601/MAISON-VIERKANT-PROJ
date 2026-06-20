@@ -48,6 +48,42 @@ export async function uploadToStorage(
   return { url: data.publicUrl, bucket, key };
 }
 
+/**
+ * Upload bytes to a PRIVATE bucket and return only the storage key (no public URL).
+ * Read access is granted later via short-lived signed URLs (see createSignedUrl).
+ */
+export async function uploadPrivate(
+  bucket: string,
+  key: string,
+  bytes: Buffer,
+  contentType: string,
+): Promise<{ bucket: string; key: string }> {
+  const supabase = getSupabaseAdmin();
+  const { error } = await supabase.storage.from(bucket).upload(key, bytes, {
+    contentType,
+    upsert: false,
+    cacheControl: "0",
+  });
+  if (error) throw new Error(error.message);
+  return { bucket, key };
+}
+
+/** Create a time-limited signed URL for a private object. Returns null on failure. */
+export async function createSignedUrl(
+  bucket: string,
+  key: string,
+  expiresInSec = 120,
+): Promise<string | null> {
+  try {
+    const supabase = getSupabaseAdmin();
+    const { data, error } = await supabase.storage.from(bucket).createSignedUrl(key, expiresInSec);
+    if (error || !data) return null;
+    return data.signedUrl;
+  } catch {
+    return null;
+  }
+}
+
 /** Remove an object from storage. Best-effort; returns false on failure. */
 export async function deleteFromStorage(bucket: string, key: string): Promise<boolean> {
   try {

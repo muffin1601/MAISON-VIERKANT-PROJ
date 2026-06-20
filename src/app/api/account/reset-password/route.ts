@@ -11,7 +11,7 @@ import { logger } from "@/lib/logger";
  * password, and marks the token used. All reset tokens for the user are invalidated.
  */
 export async function POST(req: Request) {
-  const rl = rateLimit(`reset:${clientIp(req)}`, 10, 60 * 60 * 1000);
+  const rl = await rateLimit(`reset:${clientIp(req)}`, 10, 60 * 60 * 1000);
   if (!rl.ok) {
     return NextResponse.json(
       { error: { message: "Too many attempts. Please try again later." } },

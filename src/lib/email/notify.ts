@@ -7,7 +7,12 @@ import {
   orderStatusEmail,
   adminNewLeadEmail,
   adminNewOrderEmail,
+  orderCreatedOfflineEmail,
+  adminPaymentSubmittedEmail,
+  paymentApprovedEmail,
+  paymentRejectedEmail,
   type OrderEmailLine,
+  type BankDetails,
 } from "@/lib/email/templates";
 
 /**
@@ -64,4 +69,38 @@ export function notifyAdminNewOrder(opts: Parameters<typeof adminNewOrderEmail>[
   if (!env.ADMIN_NOTIFY_EMAIL) return Promise.resolve(false);
   const { subject, html } = adminNewOrderEmail(opts);
   return sendEmail({ to: env.ADMIN_NOTIFY_EMAIL, subject, html });
+}
+
+// ---- Offline payment notifications ----
+
+export function sendOrderCreatedOfflineEmail(opts: {
+  to: string;
+  name: string;
+  number: string;
+  items: OrderEmailLine[];
+  totalInr: number;
+  advanceInr: number;
+  bank: BankDetails;
+}) {
+  const { subject, html } = orderCreatedOfflineEmail({
+    ...opts,
+    orderUrl: `${appUrl}/account/orders`,
+  });
+  return sendEmail({ to: opts.to, subject, html });
+}
+
+export function notifyAdminPaymentSubmitted(opts: Parameters<typeof adminPaymentSubmittedEmail>[0]) {
+  if (!env.ADMIN_NOTIFY_EMAIL) return Promise.resolve(false);
+  const { subject, html } = adminPaymentSubmittedEmail(opts);
+  return sendEmail({ to: env.ADMIN_NOTIFY_EMAIL, subject, html });
+}
+
+export function sendPaymentApprovedEmail(opts: { to: string; name: string; number: string; amountInr: number }) {
+  const { subject, html } = paymentApprovedEmail({ ...opts, orderUrl: `${appUrl}/account/orders` });
+  return sendEmail({ to: opts.to, subject, html });
+}
+
+export function sendPaymentRejectedEmail(opts: { to: string; name: string; number: string; reason: string }) {
+  const { subject, html } = paymentRejectedEmail({ ...opts, orderUrl: `${appUrl}/account/orders` });
+  return sendEmail({ to: opts.to, subject, html });
 }

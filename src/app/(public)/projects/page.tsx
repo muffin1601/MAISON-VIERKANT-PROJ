@@ -1,4 +1,12 @@
+import type { Metadata } from "next";
 import { getProjects } from "@/services/catalogue/catalogue";
+
+export const metadata: Metadata = {
+  title: "Projects",
+  description:
+    "Selected installations of Atelier Vierkant clay vessels across India — residences, hospitality and landscape projects, 2024–2026.",
+  alternates: { canonical: "/projects" },
+};
 
 export const dynamic = "force-dynamic";
 
