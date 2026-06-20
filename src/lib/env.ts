@@ -40,9 +40,14 @@ const schema = z.object({
 
 export const env = schema.parse(process.env);
 
-// Fail fast in production if the auth secret was left as a dev placeholder —
-// a weak/shared secret silently breaks session decoding across instances.
+// Fail fast at RUNTIME in production if the auth secret was left as a dev
+// placeholder — a weak/shared secret silently breaks session decoding.
+// Skipped during `next build` (page-data collection), where env vars injected
+// for runtime aren't necessarily present yet; the check still runs when the
+// server actually boots and handles requests.
+const isBuildPhase = process.env.NEXT_PHASE === "phase-production-build";
 if (
+  !isBuildPhase &&
   env.NODE_ENV === "production" &&
   (!env.NEXTAUTH_SECRET || env.NEXTAUTH_SECRET.length < 32 || env.NEXTAUTH_SECRET.includes("dev-secret"))
 ) {
