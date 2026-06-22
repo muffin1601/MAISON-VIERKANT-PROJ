@@ -335,14 +335,51 @@ model Payment {
   provider         String   @default("MOCK") // MOCK | RAZORPAY | COD
   method           String? // upi | card | netbanking | cod | etc. (from gateway)
   type             String   @default("ADVANCE") // ADVANCE | BALANCE | FULL
-  status           String   @default("PENDING") // PENDING | CAPTURED | FAILED | REFUNDED
+  status           String   @default("PENDING") // PENDING | PROCESSING | CAPTURED | FAILED | REFUNDED
   amountInr        Decimal  @db.Decimal(12, 2)
-  reference        String? // free-form human reference
+  amountRefundedInr Decimal @default(0) @db.Decimal(12, 2) // cumulative refunded amount (partial refunds)
+  currency         String   @default("INR") // ISO currency of amountInr
+  reference        String? // free-form human reference / gateway receipt id
   gatewayOrderId   String?  @unique // e.g. Razorpay order_xxx
   gatewayPaymentId String?  @unique // e.g. Razorpay pay_xxx — also the capture idempotency key
   signature        String? // gateway signature (audit trail)
+  webhookVerified  Boolean  @default(false) // true once a webhook confirmed the capture/refund server-side
+  paidAt           DateTime? // when the gateway captured the payment
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
+  @@index([orderId])
+  @@index([status])
+}
+
+/**
+ * Ephemeral checkout draft. Holds the cart + customer + SERVER-COMPUTED money
+ * snapshot before any permanent Order exists. The real Order is created only on
+ * (a) verified Razorpay payment, or (b) a bank-transfer "Place Order" click — so
+ * abandoned/unpaid online attempts never pollute the Order table. Expires in 24h;
+ * a pg_cron job + lazy read-time checks purge stale rows.
+ */
+model CheckoutSession {
+  id             String    @id @default(cuid())
+  token          String    @unique // high-entropy public handle used by the browser
+  status         String    @default("DRAFT") // DRAFT | PAYMENT_PROCESSING | COMPLETED | FAILED | EXPIRED
+  orderNumber    String    @unique // pre-allocated MVI-ORD-… reused when the Order is created
+  paymentMethod  String? // RAZORPAY | BANK_TRANSFER
+  customerJson   Json // { name,email,phone,company,gst, billing{…}, shipping{…} }
+  itemsJson      Json // [{ code, variantCode, finish, qty }]
+  subtotalInr    Decimal   @db.Decimal(12, 2) // ex-GST
+  gstInr         Decimal   @default(0) @db.Decimal(12, 2)
+  shippingInr    Decimal   @default(0) @db.Decimal(12, 2)
+  discountInr    Decimal   @default(0) @db.Decimal(12, 2)
+  totalInr       Decimal   @db.Decimal(12, 2)
+  advanceInr     Decimal   @db.Decimal(12, 2)
+  gatewayOrderId String?   @unique // Razorpay order id created against this session
+  customerUserId String? // linked storefront account, if logged in
+  orderId        String?   @unique // the real Order, once created (idempotency anchor)
+  expiresAt      DateTime
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  @@index([status])
+  @@index([expiresAt])
 }
 
 // ---------- QUOTES (B2B) ----------

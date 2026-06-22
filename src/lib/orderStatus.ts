@@ -32,7 +32,11 @@ export const ORDER_STATUS_FLOW = [
 
 export const ORDER_STATUS_META: Record<string, OrderStatusMeta> = {
   PENDING_PAYMENT:   { key: "PENDING_PAYMENT",   label: "Pending Payment",    color: "#a07a2a", step: 0 },
+  // Online (Razorpay) checkout opened — transient, between order creation and capture.
+  PAYMENT_PROCESSING:{ key: "PAYMENT_PROCESSING",label: "Payment Processing", color: "#1565c0", step: 1 },
   PAYMENT_SUBMITTED: { key: "PAYMENT_SUBMITTED", label: "Payment Submitted",  color: "#1565c0", step: 1 },
+  // Online payment attempt failed/cancelled — customer can retry; order stays open.
+  PAYMENT_FAILED:    { key: "PAYMENT_FAILED",    label: "Payment Failed",     color: "#b71c1c", step: 0 },
   PAYMENT_VERIFIED:  { key: "PAYMENT_VERIFIED",  label: "Payment Verified",   color: "#2e7d32", step: 2 },
   IN_PRODUCTION:     { key: "IN_PRODUCTION",     label: "In Production",      color: "#6a4a1a", step: 3 },
   READY_TO_DISPATCH: { key: "READY_TO_DISPATCH", label: "Ready to Dispatch",  color: "#7a5cc0", step: 4 },
@@ -45,7 +49,8 @@ export const ORDER_STATUS_META: Record<string, OrderStatusMeta> = {
   CONFIRMED:  { key: "CONFIRMED",  label: "Confirmed",  color: "#2e7d32", step: -1, legacy: true },
   PROCESSING: { key: "PROCESSING", label: "Processing", color: "#1565c0", step: -1, legacy: true },
   SHIPPED:    { key: "SHIPPED",    label: "Shipped",    color: "#1565c0", step: -1, legacy: true },
-  REFUNDED:   { key: "REFUNDED",   label: "Refunded",   color: "#6a1b9a", step: -1, legacy: true },
+  // Active state — set by the Razorpay refund flow (admin-initiated or refund.created webhook).
+  REFUNDED:   { key: "REFUNDED",   label: "Refunded",   color: "#6a1b9a", step: -1 },
 };
 
 /** Statuses an admin can assign via the order-status control (excludes legacy + payment-driven). */

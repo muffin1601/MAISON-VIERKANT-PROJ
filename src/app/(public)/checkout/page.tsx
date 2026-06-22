@@ -1,6 +1,7 @@
 import { getProducts, getActivePricing } from "@/services/catalogue/catalogue";
 import { calcINR } from "@/services/pricing/PricingService";
 import { getPaymentSettings } from "@/services/settings/paymentSettings";
+import { razorpayReady } from "@/lib/env";
 import type { PriceMap } from "@/features/cart/CartView";
 import { CheckoutView } from "@/features/checkout/CheckoutView";
 
@@ -24,5 +25,5 @@ export default async function CheckoutPage() {
     }
     priceMap[`${p.code}|${p.name}`] = { unit: calcINR(p.eurPrice, pricing), dims: p.dims, ...info };
   }
-  return <CheckoutView priceMap={priceMap} settings={settings} />;
+  return <CheckoutView priceMap={priceMap} settings={settings} razorpayEnabled={razorpayReady} />;
 }

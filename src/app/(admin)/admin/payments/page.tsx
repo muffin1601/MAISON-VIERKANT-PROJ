@@ -1,8 +1,9 @@
 import { getCurrentUser } from "@/lib/auth/session";
 import { hasPermission } from "@/lib/auth/rbac";
-import { getPaymentSubmissions, getPaymentStats } from "@/services/admin/paymentQueries";
+import { getPaymentSubmissions, getPaymentStats, getOnlinePayments } from "@/services/admin/paymentQueries";
 import { fmt } from "@/lib/format";
 import { PaymentQueue } from "@/features/payments/PaymentQueue";
+import { OnlinePaymentsTable } from "@/features/payments/OnlinePaymentsTable";
 
 export const dynamic = "force-dynamic";
 
@@ -17,7 +18,11 @@ export default async function PaymentsPage() {
     );
   }
 
-  const [rows, stats] = await Promise.all([getPaymentSubmissions(), getPaymentStats()]);
+  const [rows, stats, onlinePayments] = await Promise.all([
+    getPaymentSubmissions(),
+    getPaymentStats(),
+    getOnlinePayments(),
+  ]);
   const canWrite = hasPermission(user.permissions, "payments.write");
 
   const cards = [
@@ -54,6 +59,8 @@ export default async function PaymentsPage() {
       </div>
 
       <PaymentQueue rows={rows} canWrite={canWrite} />
+
+      <OnlinePaymentsTable rows={onlinePayments} canWrite={canWrite} />
     </div>
   );
 }

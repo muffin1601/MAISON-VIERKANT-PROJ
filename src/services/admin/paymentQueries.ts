@@ -65,6 +65,63 @@ export async function getPaymentSubmissions(): Promise<PaymentRow[]> {
     });
 }
 
+/** A Razorpay (online) payment row enriched with order + customer context. */
+export interface OnlinePaymentRow {
+  id: string;
+  orderId: string;
+  orderNumber: string;
+  orderStatus: string;
+  customer: string;
+  email: string;
+  provider: string;
+  status: string; // PENDING | PROCESSING | CAPTURED | FAILED | REFUNDED
+  amountInr: number;
+  amountRefundedInr: number;
+  currency: string;
+  method: string | null;
+  gatewayOrderId: string | null;
+  gatewayPaymentId: string | null;
+  webhookVerified: boolean;
+  paidAt: string | null;
+  createdAt: string;
+}
+
+/**
+ * Online (Razorpay/COD) payments for the admin dashboard. The offline bank-transfer
+ * proofs live in `getPaymentSubmissions`; this is the gateway-transaction ledger,
+ * with provider / order id / payment id / status / paid date / verification flag.
+ */
+export async function getOnlinePayments(): Promise<OnlinePaymentRow[]> {
+  const rows = await prisma.payment.findMany({
+    where: { provider: { in: ["RAZORPAY", "COD"] } },
+    orderBy: { createdAt: "desc" },
+    include: {
+      order: {
+        select: { id: true, number: true, status: true, customer: { select: { name: true, email: true } } },
+      },
+    },
+  });
+  return rows.map((p) => ({
+    id: p.id,
+    orderId: p.orderId,
+    orderNumber: p.order.number,
+    orderStatus: p.order.status,
+    customer: p.order.customer?.name ?? "—",
+    email: p.order.customer?.email ?? "",
+    provider: p.provider,
+    status: p.status,
+    amountInr: Number(p.amountInr),
+    amountRefundedInr: Number(p.amountRefundedInr),
+    currency: p.currency,
+    method: p.method,
+    gatewayOrderId: p.gatewayOrderId,
+    gatewayPaymentId: p.gatewayPaymentId,
+    webhookVerified: p.webhookVerified,
+    paidAt: p.paidAt ? p.paidAt.toISOString().slice(0, 10) : null,
+    createdAt: p.createdAt.toISOString().slice(0, 10),
+  }));
+}
+
 export interface PaymentStats {
   awaitingReview: number;
   verifiedCount: number;

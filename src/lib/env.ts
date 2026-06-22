@@ -23,6 +23,8 @@ const schema = z.object({
   RAZORPAY_KEY_ID: z.string().optional(),
   RAZORPAY_KEY_SECRET: z.string().optional(),
   RAZORPAY_WEBHOOK_SECRET: z.string().optional(),
+  // Public key id surfaced to the browser checkout (mirror of RAZORPAY_KEY_ID).
+  NEXT_PUBLIC_RAZORPAY_KEY_ID: z.string().optional(),
   // Allow Cash-on-Delivery as a checkout option.
   COD_ENABLED: z
     .enum(["true", "false"])

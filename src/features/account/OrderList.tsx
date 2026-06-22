@@ -101,6 +101,21 @@ export function OrderList({
               <span style={{ fontWeight: 600 }}>{fmt(Number(o.totalInr))}</span>
             </div>
 
+            {["PAYMENT_VERIFIED", "IN_PRODUCTION", "READY_TO_DISPATCH", "DISPATCHED", "DELIVERED"].includes(
+              o.status,
+            ) && (
+              <div style={{ marginTop: 8 }}>
+                <a
+                  href={`/api/account/invoice/${o.id}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{ fontSize: 12, color: "var(--gold)", textDecoration: "underline" }}
+                >
+                  Download invoice (PDF) →
+                </a>
+              </div>
+            )}
+
             <OrderPaymentActions
               orderNumber={o.number}
               orderStatus={o.status}

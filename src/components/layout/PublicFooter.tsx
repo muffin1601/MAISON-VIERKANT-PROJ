@@ -40,8 +40,8 @@ export function PublicFooter() {
             <Link className="f-link" href="/about">
               About Atelier
             </Link>
-            <Link className="f-link" href="/projects">
-              Projects
+            <Link className="f-link" href="/gallery">
+              Gallery
             </Link>
             <CatalogueButton
               className="f-link"

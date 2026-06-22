@@ -13,7 +13,7 @@ import { Portal } from "@/components/ui/Portal";
 const LINKS = [
   { href: "/", label: "Home", key: "home" },
   { href: "/collection", label: "Collection", key: "shop", mega: true },
-  { href: "/projects", label: "Projects", key: "projects" },
+  { href: "/gallery", label: "Gallery", key: "gallery" },
   { href: "/about", label: "Atelier", key: "about" },
   { href: "/contact", label: "Contact", key: "contact" },
 ];

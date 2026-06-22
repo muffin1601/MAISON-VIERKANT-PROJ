@@ -554,3 +554,95 @@ html,body{max-width:100%;overflow-x:hidden}
 .a-mobile-bar{display:none;position:sticky;top:0;z-index:500;align-items:center;gap:12px;background:var(--ink);color:var(--cream);padding:12px 16px}
 .a-mobile-bar button{background:none;border:none;color:var(--cream);cursor:pointer;width:40px;height:40px;display:flex;align-items:center;justify-content:center;padding:0}
 .a-mobile-bar .a-mobile-title{font-family:var(--font-cormorant),'Cormorant Garamond',serif;font-size:17px}
+
+/* ============================================================================
+   GALLERY — "Crafted Spaces" (premium, minimal, CLS-safe)
+   ============================================================================ */
+/* Hero — extends .coll-hero (dark ink panel + softened backdrop) */
+.gal-hero{padding:96px 40px 80px;text-align:center}
+.gal-hero img{opacity:.22}
+.gal-hero-ey{color:var(--gold2)}
+.gal-hero-title{color:var(--cream);font-size:54px}
+.gal-hero-sub{max-width:620px;margin:18px auto 0;color:var(--cream3);font-size:15px;line-height:1.8;font-weight:300}
+
+.gal-sw{padding-top:44px}
+
+/* Filter bar + live count */
+.gal-filterbar{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:28px}
+.gal-filterbar .filter-row{margin-bottom:0}
+.gal-count{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink4)}
+
+/* Structured 4-column grid (no masonry → zero CLS) */
+.gal-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.gal-grid + .gal-grid{margin-top:14px}
+
+/* Card */
+.gal-card{display:block;width:100%;padding:0;border:1px solid var(--cream3);background:var(--cream2);cursor:pointer;border-radius:2px;overflow:hidden;position:relative}
+.gal-card:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.gal-card-frame{display:block;position:relative;aspect-ratio:4/5;background:var(--cream2)}
+.gal-card-frame img{width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .5s ease,transform .6s ease;will-change:opacity}
+.gal-card-frame img.is-loaded{opacity:1}
+.gal-card:hover .gal-card-frame img.is-loaded{transform:scale(1.04)}
+.gal-card-no{position:absolute;left:10px;bottom:9px;font-size:9px;letter-spacing:.16em;color:var(--cream);text-shadow:0 1px 6px rgba(0,0,0,.5);opacity:0;transition:opacity .25s}
+.gal-card:hover .gal-card-no,.gal-card:focus-visible .gal-card-no{opacity:1}
+
+/* Skeleton shimmer */
+.gal-skel{aspect-ratio:4/5;border-radius:2px;background:linear-gradient(100deg,var(--cream2) 30%,var(--cream3) 50%,var(--cream2) 70%);background-size:200% 100%;animation:gal-shimmer 1.3s infinite}
+@keyframes gal-shimmer{from{background-position:200% 0}to{background-position:-200% 0}}
+
+/* Load-more / sentinel / end */
+.gal-sentinel{height:1px;width:100%}
+.gal-loadmore{display:flex;justify-content:center;margin-top:40px}
+.gal-loadmore-btn{cursor:pointer}
+.gal-end{text-align:center;margin-top:40px;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink4)}
+
+/* Lightbox */
+.gal-lb{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;background:rgba(20,18,15,.94);outline:none}
+.gal-lb-overlay{position:absolute;inset:0;background:none;border:none;cursor:zoom-out}
+.gal-lb-stage{position:relative;z-index:2;max-width:90vw;max-height:88vh;margin:0;display:flex;flex-direction:column;align-items:center;gap:14px}
+.gal-lb-img{max-width:90vw;max-height:80vh;object-fit:contain;border-radius:2px;cursor:zoom-in;transition:transform .3s ease}
+.gal-lb-img.is-zoomed{transform:scale(1.8);cursor:zoom-out}
+.gal-lb-caption{display:flex;gap:18px;align-items:center;color:var(--cream3)}
+.gal-lb-no{font-family:var(--font-cormorant),'Cormorant Garamond',serif;font-size:20px;color:var(--cream)}
+.gal-lb-zoomhint{font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink4)}
+.gal-lb-counter{position:absolute;top:22px;left:50%;transform:translateX(-50%);z-index:3;font-size:11px;letter-spacing:.18em;color:var(--cream3)}
+.gal-lb-close{position:absolute;top:16px;right:18px;z-index:3;background:none;border:none;color:var(--cream);cursor:pointer;padding:8px;line-height:0}
+.gal-lb-nav{position:absolute;z-index:3;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.18);color:var(--cream);cursor:pointer;width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:background .2s}
+.gal-lb-nav:hover{background:rgba(255,255,255,.16)}
+.gal-lb-prev{left:18px}.gal-lb-next{right:18px}
+.gal-lb-close:focus-visible,.gal-lb-nav:focus-visible{outline:2px solid var(--gold2);outline-offset:2px}
+
+/* Tablet: 3 columns */
+@media(max-width:1024px){
+  .gal-grid{grid-template-columns:repeat(3,1fr)}
+}
+/* Mobile: 2 columns */
+@media(max-width:640px){
+  .gal-hero{padding:64px 24px 48px}
+  .gal-hero-title{font-size:38px}
+  .gal-grid{grid-template-columns:repeat(2,1fr);gap:10px}
+  .gal-lb-nav{width:40px;height:40px}
+  .gal-lb-prev{left:8px}.gal-lb-next{right:8px}
+  .gal-lb-img.is-zoomed{transform:scale(1.5)}
+}
+@media(prefers-reduced-motion:reduce){
+  .gal-card-frame img,.gal-card:hover .gal-card-frame img,.gal-lb-img,.gal-skel{transition:none;animation:none}
+}
+
+/* ============================================================================
+   CHECKOUT — payment method selection cards
+   ============================================================================ */
+.pay-methods{display:flex;flex-direction:column;gap:12px;margin-top:6px}
+.pay-card{display:flex;align-items:flex-start;gap:14px;width:100%;text-align:left;cursor:pointer;
+  background:var(--white);border:1px solid var(--cream3);border-radius:2px;padding:16px 16px 16px 14px;position:relative;transition:border-color .15s,box-shadow .15s}
+.pay-card:hover{border-color:var(--ink4)}
+.pay-card:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.pay-card.selected{border-color:var(--gold);box-shadow:inset 0 0 0 1px var(--gold)}
+.pay-card-check{flex:0 0 18px;width:18px;height:18px;border:1px solid var(--cream3);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;margin-top:2px;transition:background .15s,border-color .15s}
+.pay-card.selected .pay-card-check{background:var(--gold);border-color:var(--gold)}
+.pay-card-icon{flex:0 0 auto;color:var(--ink3);margin-top:1px}
+.pay-card.selected .pay-card-icon{color:var(--gold)}
+.pay-card-body{display:flex;flex-direction:column;gap:4px}
+.pay-card-title{font-size:14px;font-weight:500;color:var(--ink);display:flex;align-items:center;gap:8px}
+.pay-card-badge{font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;background:var(--gold);color:#fff;border-radius:2px;padding:2px 7px;font-weight:500}
+.pay-card-desc{font-size:11.5px;color:var(--ink3);line-height:1.6}

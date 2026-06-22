@@ -112,7 +112,7 @@ export default async function HomePage() {
         </div>
         <div className="home-gallery" id="home-gallery">
           {GALLERY.map((t, idx) => (
-            <Link key={idx} href="/projects" className={`gi ${t.cls}`}>
+            <Link key={idx} href="/gallery" className={`gi ${t.cls}`}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={AVI(t.i, 900)} alt={t.cap} loading="lazy" />
               <div className="gi-cap">{t.cap}</div>
