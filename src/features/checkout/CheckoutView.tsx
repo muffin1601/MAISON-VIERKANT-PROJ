@@ -46,6 +46,7 @@ interface PlacedState {
   name: string;
   email: string;
   advance: number;
+  full: boolean; // true when the customer paid 100% upfront
   paymentId?: string;
   amountPaid?: number;
 }
@@ -92,6 +93,11 @@ export function CheckoutView({
   const [couponBusy, setCouponBusy] = useState(false);
   const couponRef = useRef<string | null>(null);
   const appliedCoupon = session?.discountInr && session.discountInr > 0 ? session.couponCode : null;
+
+  // Pay-now amount choice: 50% advance (default) or 100% full. Kept in a ref so the
+  // session-creation effect always reads the latest value.
+  const [payFull, setPayFull] = useState(false);
+  const payFullRef = useRef(false);
 
   const unitOf = (id: string, code: string) => priceMap[`${id}|${code}`]?.unit ?? 0;
   const clientTotal = items.reduce((s, i) => s + unitOf(i.id, i.code) * i.qty, 0);
@@ -141,6 +147,7 @@ export function CheckoutView({
       { ...d, name: d.name ?? "" },
       its.map((i) => ({ code: i.id, variantCode: i.code, finish: i.finish, qty: i.qty })),
       couponRef.current,
+      payFullRef.current,
     )
       .then(setSession)
       .catch((e) => setSessionError(e instanceof Error ? e.message : "Could not start checkout."))
@@ -149,6 +156,28 @@ export function CheckoutView({
         creating.current = false;
       });
   }, [step, placed, session]);
+
+  // Switch the pay-now amount (50% / 100%) by re-creating the session server-side.
+  async function selectPayFull(full: boolean) {
+    if (payFullRef.current === full) return;
+    payFullRef.current = full;
+    setPayFull(full);
+    setSessionLoading(true);
+    const { data: d, items: its } = latest.current;
+    try {
+      const next = await createCheckoutSession(
+        { ...d, name: d.name ?? "" },
+        its.map((i) => ({ code: i.id, variantCode: i.code, finish: i.finish, qty: i.qty })),
+        couponRef.current,
+        full,
+      );
+      setSession(next);
+    } catch {
+      setSessionError("Could not update the amount. Please try again.");
+    } finally {
+      setSessionLoading(false);
+    }
+  }
 
   // Apply / remove a coupon by re-creating the session with the code. The server
   // re-validates and returns discounted totals (or ignores an invalid code).
@@ -163,6 +192,7 @@ export function CheckoutView({
         { ...d, name: d.name ?? "" },
         its.map((i) => ({ code: i.id, variantCode: i.code, finish: i.finish, qty: i.qty })),
         code,
+        payFullRef.current,
       );
       setSession(next);
       if (!remove) {
@@ -230,6 +260,7 @@ export function CheckoutView({
       name: data.name || "",
       email: data.email || "",
       advance,
+      full: payFull,
       paymentId: info.paymentId,
       amountPaid: info.amountPaid,
     });
@@ -245,7 +276,7 @@ export function CheckoutView({
     setPayError("");
     try {
       const order = await placeBankOrder(session.token);
-      setPlaced({ method: "BANK_TRANSFER", orderNumber: order.orderNumber, name: data.name || "", email: data.email || "", advance: order.advanceInr });
+      setPlaced({ method: "BANK_TRANSFER", orderNumber: order.orderNumber, name: data.name || "", email: data.email || "", advance: order.advanceInr, full: payFull });
       clear();
       try {
         localStorage.removeItem(DRAFT_KEY);
@@ -302,6 +333,8 @@ export function CheckoutView({
                   setMethod={setMethod}
                   advance={advance}
                   total={total}
+                  payFull={payFull}
+                  onSelectPayFull={selectPayFull}
                   notes={data.notes || ""}
                   setNotes={(v) => set({ notes: v })}
                   onBack={() => goToStep(2)}
@@ -342,7 +375,8 @@ export function CheckoutView({
                     ) : null}
                     <div className="co-sum-line" style={{ color: "rgba(212,185,120,.8)" }}><span>✓ Delhi delivery included</span></div>
                     <div className="co-sum-total"><span>Total</span><span>{fmt(total)}</span></div>
-                    <div className="co-sum-line" style={{ color: "rgba(212,185,120,.9)", marginTop: 6 }}><span>50% advance to confirm</span><span>{fmt(advance)}</span></div>
+                    <div className="co-sum-line" style={{ color: "rgba(212,185,120,.9)", marginTop: 6 }}><span>{payFull ? "Paying now (full)" : "50% advance to confirm"}</span><span>{fmt(advance)}</span></div>
+                    {!payFull && <div className="co-sum-line" style={{ fontSize: 11, opacity: 0.7 }}><span>Balance before dispatch</span><span>{fmt(total - advance)}</span></div>}
 
                     {/* Coupon */}
                     {appliedCoupon ? (
@@ -539,6 +573,8 @@ function PaymentStep({
   setMethod,
   advance,
   total,
+  payFull,
+  onSelectPayFull,
   notes,
   setNotes,
   onBack,
@@ -556,6 +592,8 @@ function PaymentStep({
   setMethod: (m: Method) => void;
   advance: number;
   total: number;
+  payFull: boolean;
+  onSelectPayFull: (full: boolean) => void;
   notes: string;
   setNotes: (v: string) => void;
   onBack: () => void;
@@ -565,10 +603,40 @@ function PaymentStep({
   payError: string;
 }) {
   const ready = !!session && !sessionLoading;
+  const half = Math.round(total * 0.5);
 
   return (
     <>
-      <div className="co-section-title">Select a Payment Method</div>
+      {/* How much to pay now */}
+      <div className="co-section-title">How Much To Pay Now</div>
+      <div className="pay-amount" role="radiogroup" aria-label="Amount to pay now">
+        <button
+          type="button"
+          role="radio"
+          aria-checked={!payFull}
+          className={`pay-amount-opt${!payFull ? " selected" : ""}`}
+          onClick={() => onSelectPayFull(false)}
+          disabled={sessionLoading}
+        >
+          <span className="pay-amount-title">50% Advance</span>
+          <span className="pay-amount-val">{fmt(half)}</span>
+          <span className="pay-amount-sub">Balance {fmt(total - half)} before dispatch</span>
+        </button>
+        <button
+          type="button"
+          role="radio"
+          aria-checked={payFull}
+          className={`pay-amount-opt${payFull ? " selected" : ""}`}
+          onClick={() => onSelectPayFull(true)}
+          disabled={sessionLoading}
+        >
+          <span className="pay-amount-title">Pay Full Amount</span>
+          <span className="pay-amount-val">{fmt(total)}</span>
+          <span className="pay-amount-sub">Nothing due later</span>
+        </button>
+      </div>
+
+      <div className="co-section-title" style={{ marginTop: 22 }}>Select a Payment Method</div>
 
       {sessionError && (
         <div role="alert" className="co-transport-note" style={{ borderColor: "#e3b6b6", background: "#fbeaea", color: "var(--danger)" }}>
@@ -608,7 +676,10 @@ function PaymentStep({
           <BankDetailsCard settings={settings} amount={advance} reference={session?.orderNumber ?? ""} />
           <div className="co-transport-note" style={{ marginTop: 14 }}>
             <strong>💳 Payment Terms</strong>
-            <br />50% advance ({fmt(advance)}) secures your order. Balance {fmt(total - advance)} payable before dispatch.
+            <br />
+            {payFull
+              ? `Full payment (${fmt(advance)}) — your order is fully paid, nothing due later.`
+              : `50% advance (${fmt(advance)}) secures your order. Balance ${fmt(total - advance)} payable before dispatch.`}
           </div>
         </div>
       )}
@@ -706,7 +777,7 @@ function SuccessScreen({ placed, settings }: { placed: PlacedState; settings: Pa
         <>
           <div className="co-sum-box" style={{ background: "var(--ink)", margin: "16px 0" }}>
             <div className="co-sum-line" style={{ color: "rgba(248,245,240,.75)" }}><span>Payment ID</span><span style={{ fontFamily: "monospace", fontSize: 11 }}>{placed.paymentId || "—"}</span></div>
-            <div className="co-sum-line" style={{ color: "rgba(248,245,240,.75)" }}><span>Amount paid (50% advance)</span><span>{fmt(placed.amountPaid ?? placed.advance)}</span></div>
+            <div className="co-sum-line" style={{ color: "rgba(248,245,240,.75)" }}><span>{placed.full ? "Amount paid (full)" : "Amount paid (50% advance)"}</span><span>{fmt(placed.amountPaid ?? placed.advance)}</span></div>
           </div>
           <p style={{ fontSize: 12.5, color: "var(--ink3)", lineHeight: 1.9, textAlign: "center", maxWidth: 500, margin: "0 auto 16px" }}>
             Thank you, <strong>{placed.name}</strong>. Your advance is received and production begins now (lead time 10–14 weeks). A confirmation &amp; invoice have been emailed to <strong>{placed.email}</strong>.
@@ -719,7 +790,12 @@ function SuccessScreen({ placed, settings }: { placed: PlacedState; settings: Pa
       ) : (
         <>
           <p style={{ fontSize: 12.5, color: "var(--ink3)", lineHeight: 1.9, textAlign: "center", maxWidth: 500, margin: "16px auto" }}>
-            Thank you, <strong>{placed.name}</strong>. Your order is reserved. To confirm it, transfer the <strong>50% advance of {fmt(placed.advance)}</strong> using the details below, then upload your payment proof. We&apos;ve emailed these instructions to <strong>{placed.email}</strong>.
+            Thank you, <strong>{placed.name}</strong>. Your order is reserved. To confirm it, transfer the{" "}
+            <strong>
+              {placed.full ? "full amount of " : "50% advance of "}
+              {fmt(placed.advance)}
+            </strong>{" "}
+            using the details below, then upload your payment proof. We&apos;ve emailed these instructions to <strong>{placed.email}</strong>.
           </p>
           <BankDetailsCard settings={settings} amount={placed.advance} reference={placed.orderNumber} />
           <div style={{ textAlign: "center", marginTop: 22 }}>

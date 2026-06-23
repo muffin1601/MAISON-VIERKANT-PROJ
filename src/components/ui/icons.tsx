@@ -13,6 +13,10 @@ export {
   FilePlus2,
   FileText,
   PackageOpen,
+  CreditCard,
+  Ticket,
+  LifeBuoy,
+  Settings,
   Pencil,
   FileUp,
   Upload,
@@ -46,6 +50,10 @@ import {
   FilePlus2,
   FileText,
   PackageOpen,
+  CreditCard,
+  Ticket,
+  LifeBuoy,
+  Settings,
 } from "lucide-react";
 
 /** Map each admin nav route to its icon. */
@@ -55,6 +63,10 @@ export const NAV_ICONS: Record<string, LucideIcon> = {
   "/admin/products": Armchair,
   "/admin/stock": Boxes,
   "/admin/orders": ShoppingBag,
+  "/admin/payments": CreditCard,
+  "/admin/coupons": Ticket,
+  "/admin/support": LifeBuoy,
+  "/admin/payment-settings": Settings,
   "/admin/leads": Inbox,
   "/admin/customers": Users,
   "/admin/quotes": FilePlus2,

@@ -147,6 +147,7 @@ export async function createCheckoutSession(input: {
   items: CheckoutItemInput[];
   customerUserId?: string | null;
   couponCode?: string | null;
+  payFull?: boolean; // true → charge 100% now; false/undefined → 50% advance
 }): Promise<CreatedSession> {
   const priced = await priceCart(input.items);
   if (priced.orderItems.length === 0) {
@@ -170,7 +171,8 @@ export async function createCheckoutSession(input: {
   }
 
   const totalInr = Math.max(0, priced.totalInr - discountInr);
-  const advanceInr = Math.round(totalInr * 0.5);
+  // Customer chooses how much to pay now: 100% (full) or 50% (advance).
+  const advanceInr = input.payFull ? totalInr : Math.round(totalInr * 0.5);
 
   const token = crypto.randomBytes(24).toString("base64url");
   const orderNumber = newOrderNumber();
@@ -304,7 +306,10 @@ export async function finalizeSessionToOrder(
   const discountInr = Number(session.discountInr ?? 0);
   const couponCode = session.couponCode ?? null;
   const finalTotalInr = Math.max(0, priced.totalInr - discountInr);
-  const finalAdvanceInr = Math.round(finalTotalInr * 0.5);
+  // Honor the customer's pay-now choice captured on the session: if the stored
+  // amount-to-pay was the full total (≈ total), this was a 100% payment; else 50%.
+  const wasFull = Number(session.advanceInr) >= Number(session.totalInr) - 1;
+  const finalAdvanceInr = wasFull ? finalTotalInr : Math.round(finalTotalInr * 0.5);
 
   // Resolve / create the customer CRM record.
   const linkedCustomer = session.customerUserId
@@ -389,7 +394,7 @@ export async function finalizeSessionToOrder(
                 payments: {
                   create: {
                     provider: PaymentProvider.RAZORPAY,
-                    type: PaymentType.ADVANCE,
+                    type: wasFull ? PaymentType.FULL : PaymentType.ADVANCE,
                     status: PaymentStatus.CAPTURED,
                     amountInr: finalAdvanceInr,
                     currency: "INR",

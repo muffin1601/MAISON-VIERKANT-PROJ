@@ -2429,3 +2429,54 @@ summary:focus-visible {
 @media (prefers-reduced-motion: reduce) {
   .cb-typing span { animation: none; }
 }
+
+/* ---------- Checkout: pay-now amount choice (50% / 100%) ---------- */
+.pay-amount {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+.pay-amount-opt {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  text-align: left;
+  border: 1.5px solid var(--cream3, #e3ddd3);
+  border-radius: 8px;
+  padding: 14px 16px;
+  background: #fff;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  font: inherit;
+}
+.pay-amount-opt:hover {
+  border-color: var(--gold, #9a7b3f);
+}
+.pay-amount-opt.selected {
+  border-color: var(--gold, #9a7b3f);
+  box-shadow: 0 0 0 3px rgba(154, 123, 63, 0.12);
+}
+.pay-amount-opt:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.pay-amount-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink, #1c1a17);
+}
+.pay-amount-val {
+  font-family: "Cormorant Garamond", serif;
+  font-size: 21px;
+  color: var(--ink, #1c1a17);
+}
+.pay-amount-sub {
+  font-size: 11px;
+  color: var(--ink4, #6b6256);
+}
+@media (max-width: 480px) {
+  .pay-amount {
+    grid-template-columns: 1fr;
+  }
+}

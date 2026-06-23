@@ -94,11 +94,13 @@ export function createCheckoutSession(
   customer: CheckoutCustomer,
   items: CheckoutItem[],
   couponCode?: string | null,
+  payFull?: boolean,
 ): Promise<CheckoutSessionData> {
   return postJson<CheckoutSessionData>("/api/checkout/session", {
     customer,
     items,
     ...(couponCode ? { couponCode } : {}),
+    ...(payFull ? { payFull: true } : {}),
   });
 }
 

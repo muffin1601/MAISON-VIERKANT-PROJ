@@ -32,6 +32,7 @@ const schema = z.object({
     )
     .min(1),
   couponCode: z.string().trim().max(40).optional(),
+  payFull: z.boolean().optional(),
 });
 
 /**
@@ -69,6 +70,7 @@ export async function POST(req: Request) {
       items: parsed.data.items,
       customerUserId: user?.role === "CUSTOMER" ? user.id : null,
       couponCode: parsed.data.couponCode ?? null,
+      payFull: parsed.data.payFull ?? false,
     });
     return NextResponse.json({ data: session }, { status: 201 });
   } catch (err) {
