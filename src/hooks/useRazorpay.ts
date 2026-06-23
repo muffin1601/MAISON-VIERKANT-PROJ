@@ -14,6 +14,8 @@ interface RazorpayOptions {
   name: string;
   description?: string;
   order_id: string;
+  customer_id?: string; // Razorpay vault customer — enables "save card"
+  save?: 0 | 1; // offer to tokenise the card for next time
   prefill?: { name?: string; email?: string; contact?: string };
   notes?: Record<string, string>;
   theme?: { color?: string };

@@ -66,6 +66,32 @@ export async function getLeads() {
   }));
 }
 
+/**
+ * Commerce analytics for the dashboard: payment success rate, checkout conversion,
+ * average order value, and confirmed revenue. Cheap aggregate queries.
+ */
+export async function getCommerceMetrics() {
+  const [captured, failed, sessionsTotal, sessionsCompleted, orderAgg] = await Promise.all([
+    prisma.payment.count({ where: { status: "CAPTURED" } }),
+    prisma.payment.count({ where: { status: "FAILED" } }),
+    prisma.checkoutSession.count(),
+    prisma.checkoutSession.count({ where: { status: "COMPLETED" } }),
+    prisma.order.aggregate({ _avg: { totalInr: true }, _count: { _all: true } }),
+  ]);
+  const payTotal = captured + failed;
+  const paymentSuccessRate = payTotal === 0 ? null : Math.round((captured / payTotal) * 100);
+  const conversionRate = sessionsTotal === 0 ? null : Math.round((sessionsCompleted / sessionsTotal) * 100);
+  const aov = orderAgg._avg.totalInr ? Number(orderAgg._avg.totalInr) : 0;
+  return {
+    paymentSuccessRate,
+    conversionRate,
+    aov,
+    orderCount: orderAgg._count._all,
+    capturedPayments: captured,
+    failedPayments: failed,
+  };
+}
+
 export async function getOrders() {
   const orders = await prisma.order.findMany({
     include: { customer: true, items: { include: { product: true } } },
@@ -78,6 +104,9 @@ export async function getOrders() {
     items: o.items.map((it) => `${it.product.name} ×${it.qty}`).join(", ") || "—",
     total: Number(o.totalInr),
     status: o.status.toLowerCase(),
+    trackingNumber: o.trackingNumber ?? "",
+    courier: o.courier ?? "",
+    trackingUrl: o.trackingUrl ?? "",
   }));
 }
 

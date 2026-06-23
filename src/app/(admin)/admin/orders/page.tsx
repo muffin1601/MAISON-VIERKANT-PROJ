@@ -2,7 +2,7 @@ import { getCurrentUser } from "@/lib/auth/session";
 import { hasPermission } from "@/lib/auth/rbac";
 import { getOrders } from "@/services/admin/queries";
 import { fmt } from "@/lib/format";
-import { OrderStatusSelect } from "@/features/orders/OrderStatusSelect";
+import { OrderFulfilment } from "@/features/orders/OrderFulfilment";
 
 export const dynamic = "force-dynamic";
 
@@ -48,7 +48,14 @@ export default async function OrdersPage() {
                   {fmt(o.total)}
                 </td>
                 <td>
-                  <OrderStatusSelect number={o.id} status={o.status} canWrite={canWrite} />
+                  <OrderFulfilment
+                    number={o.id}
+                    status={o.status}
+                    trackingNumber={o.trackingNumber}
+                    courier={o.courier}
+                    trackingUrl={o.trackingUrl}
+                    canWrite={canWrite}
+                  />
                 </td>
               </tr>
             ))}

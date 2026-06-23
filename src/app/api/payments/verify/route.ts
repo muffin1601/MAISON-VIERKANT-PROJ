@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { razorpayReady } from "@/lib/env";
+import { prisma } from "@/lib/prisma";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 import { verifyPaymentSignature } from "@/services/payment/razorpayService";
+import { captureCardFromPayment } from "@/services/payment/savedCards";
 import {
   getUsableSession,
   finalizeSessionToOrder,
@@ -84,6 +86,22 @@ export async function POST(req: Request) {
         viaWebhook: false,
       },
     });
+
+    // Best-effort: if a signed-in customer chose to save their card, persist the
+    // token. No-op when there's no token or tokenisation is disabled.
+    if (session.customerUserId) {
+      const cust = await prisma.customer.findUnique({
+        where: { userId: session.customerUserId },
+        select: { id: true, razorpayCustomerId: true },
+      });
+      if (cust?.razorpayCustomerId) {
+        void captureCardFromPayment({
+          customerId: cust.id,
+          razorpayCustomerId: cust.razorpayCustomerId,
+          paymentId: razorpay_payment_id,
+        }).catch(() => {});
+      }
+    }
 
     return NextResponse.json({
       data: {

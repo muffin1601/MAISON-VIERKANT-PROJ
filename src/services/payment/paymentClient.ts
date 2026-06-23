@@ -35,6 +35,7 @@ export interface CheckoutSessionData {
   gstInr: number;
   shippingInr: number;
   discountInr: number;
+  couponCode: string | null;
   totalInr: number;
   advanceInr: number;
   itemCount: number;
@@ -49,6 +50,7 @@ export interface CreatedOrder {
   sessionToken: string;
   orderNumber: string;
   customer: { name: string; email: string; contact: string };
+  rzpCustomerId?: string | null;
 }
 
 export interface VerifiedPayment {
@@ -91,8 +93,13 @@ async function postJson<T>(url: string, body: unknown): Promise<T> {
 export function createCheckoutSession(
   customer: CheckoutCustomer,
   items: CheckoutItem[],
+  couponCode?: string | null,
 ): Promise<CheckoutSessionData> {
-  return postJson<CheckoutSessionData>("/api/checkout/session", { customer, items });
+  return postJson<CheckoutSessionData>("/api/checkout/session", {
+    customer,
+    items,
+    ...(couponCode ? { couponCode } : {}),
+  });
 }
 
 /** Create (or reuse) the Razorpay order for a session's advance. */

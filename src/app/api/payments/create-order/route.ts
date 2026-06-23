@@ -3,7 +3,8 @@ import { z } from "zod";
 import { env, razorpayReady } from "@/lib/env";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
-import { createRazorpayOrder, buildReceipt } from "@/services/payment/razorpayService";
+import { prisma } from "@/lib/prisma";
+import { createRazorpayOrder, buildReceipt, createOrFetchRazorpayCustomer } from "@/services/payment/razorpayService";
 import { getUsableSession, attachGatewayOrder } from "@/services/checkout/checkoutSession";
 import { CheckoutSessionStatus } from "@/lib/paymentStatus";
 
@@ -61,6 +62,31 @@ export async function POST(req: Request) {
     const amountInr = Number(session.advanceInr);
     const customer = session.customerJson as { name?: string; email?: string; phone?: string };
 
+    // For signed-in customers, ensure a Razorpay vault customer so the checkout can
+    // offer to save the card. Best-effort: a failure here never blocks payment.
+    let rzpCustomerId: string | null = null;
+    if (session.customerUserId) {
+      try {
+        const cust = await prisma.customer.findUnique({
+          where: { userId: session.customerUserId },
+          select: { id: true, razorpayCustomerId: true, name: true, email: true, phone: true },
+        });
+        if (cust) {
+          rzpCustomerId = cust.razorpayCustomerId;
+          if (!rzpCustomerId) {
+            rzpCustomerId = await createOrFetchRazorpayCustomer({
+              name: cust.name || customer.name || "Customer",
+              email: cust.email || customer.email,
+              contact: cust.phone || customer.phone,
+            });
+            await prisma.customer.update({ where: { id: cust.id }, data: { razorpayCustomerId: rzpCustomerId } });
+          }
+        }
+      } catch (e) {
+        logger.warn({ err: e }, "razorpay customer ensure failed (non-fatal)");
+      }
+    }
+
     // Idempotency: reuse the Razorpay order already attached to this session.
     let gatewayOrderId = session.gatewayOrderId ?? "";
     if (!gatewayOrderId) {
@@ -83,6 +109,7 @@ export async function POST(req: Request) {
         sessionToken: session.token,
         orderNumber: session.orderNumber,
         customer: { name: customer.name ?? "", email: customer.email ?? "", contact: customer.phone ?? "" },
+        rzpCustomerId, // present only for signed-in customers; enables "save card"
       },
     });
   } catch (err) {

@@ -1,6 +1,6 @@
 import { getCurrentUser } from "@/lib/auth/session";
 import { hasPermission } from "@/lib/auth/rbac";
-import { getDashboard } from "@/services/admin/queries";
+import { getDashboard, getCommerceMetrics } from "@/services/admin/queries";
 import { fmt } from "@/lib/format";
 import { statusMeta } from "@/lib/orderStatus";
 
@@ -19,7 +19,7 @@ export default async function DashboardPage() {
     );
   }
 
-  const { stats, recent, lowStock } = await getDashboard();
+  const [{ stats, recent, lowStock }, metrics] = await Promise.all([getDashboard(), getCommerceMetrics()]);
 
   return (
     <div className="a-page active">
@@ -34,6 +34,30 @@ export default async function DashboardPage() {
             <div className="stat-s">{s.sub}</div>
           </div>
         ))}
+      </div>
+
+      {/* Commerce analytics */}
+      <div className="stat-grid" style={{ marginTop: 8 }}>
+        <div className="stat-card">
+          <div className="stat-l">Payment Success Rate</div>
+          <div className="stat-v">{metrics.paymentSuccessRate == null ? "—" : `${metrics.paymentSuccessRate}%`}</div>
+          <div className="stat-s">{metrics.capturedPayments} captured · {metrics.failedPayments} failed</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-l">Checkout Conversion</div>
+          <div className="stat-v">{metrics.conversionRate == null ? "—" : `${metrics.conversionRate}%`}</div>
+          <div className="stat-s">completed / started sessions</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-l">Avg Order Value</div>
+          <div className="stat-v">{fmt(metrics.aov)}</div>
+          <div className="stat-s">{metrics.orderCount} orders</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-l">Total Orders</div>
+          <div className="stat-v">{metrics.orderCount}</div>
+          <div className="stat-s">all-time</div>
+        </div>
       </div>
 
       <div className="a-2col">

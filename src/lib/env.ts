@@ -65,6 +65,14 @@ export const upstashReady = !!env.UPSTASH_REDIS_REST_URL && !!env.UPSTASH_REDIS_
 export const razorpayReady =
   env.PAYMENT_PROVIDER === "razorpay" && !!env.RAZORPAY_KEY_ID && !!env.RAZORPAY_KEY_SECRET;
 
+/**
+ * True when the Razorpay WEBHOOK secret is configured. When false, webhook
+ * delivery cannot be verified, so the asynchronous "paid even if the browser
+ * closed" path is INACTIVE — only the synchronous /verify callback creates orders.
+ * Set RAZORPAY_WEBHOOK_SECRET (Razorpay Dashboard → Settings → Webhooks) to enable it.
+ */
+export const razorpayWebhookReady = razorpayReady && !!env.RAZORPAY_WEBHOOK_SECRET;
+
 /** True when Resend is configured (real email delivery, not console-log). */
 export const emailReady = !!env.RESEND_API_KEY;
 

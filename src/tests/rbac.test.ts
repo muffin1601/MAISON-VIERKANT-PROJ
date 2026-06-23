@@ -7,11 +7,11 @@ describe("RBAC", () => {
     expect(allowedNav(all)).toHaveLength(ADMIN_NAV.length);
   });
 
-  it("sales executive sees only customers, quote create & saved quotes", () => {
+  it("sales executive sees support, leads, customers, quote create & saved quotes", () => {
     const perms = ["customers.read", "quotes.write", "quotes.read", "leads.read"];
     const labels = allowedNav(perms).map((n) => n.label);
-    // Order follows ADMIN_NAV (leads precedes customers/quotes).
-    expect(labels).toEqual(["Catalogue Leads", "Customers", "Create Quote", "Saved Quotes"]);
+    // Order follows ADMIN_NAV (Support & Returns + Catalogue Leads are leads.read).
+    expect(labels).toEqual(["Support & Returns", "Catalogue Leads", "Customers", "Create Quote", "Saved Quotes"]);
   });
 
   it("inventory manager cannot see orders or pricing-manage pages", () => {

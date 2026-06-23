@@ -50,6 +50,7 @@ export function RazorpayPayButton({
         name: "Maison Vierkant India",
         description: `Advance for ${created.orderNumber}`,
         order_id: created.gatewayOrderId,
+        ...(created.rzpCustomerId ? { customer_id: created.rzpCustomerId, save: 1 as const } : {}),
         prefill: created.customer,
         notes: { sessionToken, orderNumber: created.orderNumber },
         theme: { color: "#9a7a3a" },

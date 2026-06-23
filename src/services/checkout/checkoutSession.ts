@@ -6,6 +6,7 @@ import { getActivePricing } from "@/services/catalogue/catalogue";
 import { calcBreakdown } from "@/services/pricing/PricingService";
 import { sendOfflineOrderCreated, sendOrderConfirmation } from "@/services/orders/notify";
 import { ensureInvoice } from "@/services/payment/paymentOrders";
+import { validateCoupon, recordRedemption } from "@/services/coupons/coupons";
 import { logger } from "@/lib/logger";
 import {
   CheckoutSessionStatus,
@@ -130,6 +131,7 @@ export interface CreatedSession {
   gstInr: number;
   shippingInr: number;
   discountInr: number;
+  couponCode: string | null;
   totalInr: number;
   advanceInr: number;
   itemCount: number;
@@ -144,11 +146,31 @@ export async function createCheckoutSession(input: {
   customer: CheckoutCustomer;
   items: CheckoutItemInput[];
   customerUserId?: string | null;
+  couponCode?: string | null;
 }): Promise<CreatedSession> {
   const priced = await priceCart(input.items);
   if (priced.orderItems.length === 0) {
     throw new Error("EMPTY_CART");
   }
+
+  // Optional coupon: validated server-side against the SERVER total. An invalid
+  // code is ignored (no discount) rather than blocking checkout — the dedicated
+  // /api/coupons/validate endpoint gives the user precise feedback beforehand.
+  let discountInr = 0;
+  let couponCode: string | null = null;
+  if (input.couponCode) {
+    const customerId = input.customerUserId
+      ? (await prisma.customer.findUnique({ where: { userId: input.customerUserId }, select: { id: true } }))?.id ?? null
+      : null;
+    const res = await validateCoupon(input.couponCode, priced.totalInr, customerId);
+    if (res.ok) {
+      discountInr = res.discountInr;
+      couponCode = res.code;
+    }
+  }
+
+  const totalInr = Math.max(0, priced.totalInr - discountInr);
+  const advanceInr = Math.round(totalInr * 0.5);
 
   const token = crypto.randomBytes(24).toString("base64url");
   const orderNumber = newOrderNumber();
@@ -164,9 +186,10 @@ export async function createCheckoutSession(input: {
       subtotalInr: priced.subtotalInr,
       gstInr: priced.gstInr,
       shippingInr: 0, // ex-Delhi model: transport quoted separately, not charged here
-      discountInr: 0, // discount is already baked into unitPriceInr via the pricing rule
-      totalInr: priced.totalInr,
-      advanceInr: priced.advanceInr,
+      discountInr,
+      couponCode,
+      totalInr,
+      advanceInr,
       customerUserId: input.customerUserId ?? null,
       expiresAt,
     },
@@ -178,9 +201,10 @@ export async function createCheckoutSession(input: {
     subtotalInr: priced.subtotalInr,
     gstInr: priced.gstInr,
     shippingInr: 0,
-    discountInr: 0,
-    totalInr: priced.totalInr,
-    advanceInr: priced.advanceInr,
+    discountInr,
+    couponCode,
+    totalInr,
+    advanceInr,
     itemCount: priced.orderItems.length,
   };
 }
@@ -275,6 +299,13 @@ export async function finalizeSessionToOrder(
   const priced = await priceCart(items); // re-price at finalize time (authoritative)
   if (priced.orderItems.length === 0) throw new Error("EMPTY_CART");
 
+  // Apply the discount captured on the (server-authored) session. We trust the
+  // session figures here — they were computed and stored server-side at creation.
+  const discountInr = Number(session.discountInr ?? 0);
+  const couponCode = session.couponCode ?? null;
+  const finalTotalInr = Math.max(0, priced.totalInr - discountInr);
+  const finalAdvanceInr = Math.round(finalTotalInr * 0.5);
+
   // Resolve / create the customer CRM record.
   const linkedCustomer = session.customerUserId
     ? await prisma.customer.findUnique({ where: { userId: session.customerUserId } })
@@ -348,8 +379,10 @@ export async function finalizeSessionToOrder(
           status,
           subtotalInr: priced.subtotalInr,
           gstInr: priced.gstInr,
-          totalInr: priced.totalInr,
-          advanceInr: priced.advanceInr,
+          discountInr,
+          couponCode,
+          totalInr: finalTotalInr,
+          advanceInr: finalAdvanceInr,
           items: { create: priced.orderItems },
           ...(opts.paid
             ? {
@@ -358,7 +391,7 @@ export async function finalizeSessionToOrder(
                     provider: PaymentProvider.RAZORPAY,
                     type: PaymentType.ADVANCE,
                     status: PaymentStatus.CAPTURED,
-                    amountInr: priced.advanceInr,
+                    amountInr: finalAdvanceInr,
                     currency: "INR",
                     gatewayOrderId: opts.payment.gatewayOrderId,
                     gatewayPaymentId: opts.payment.gatewayPaymentId,
@@ -401,6 +434,16 @@ export async function finalizeSessionToOrder(
     data: { orderId, status: CheckoutSessionStatus.COMPLETED, paymentMethod: opts.method },
   });
 
+  // Record coupon redemption once, only for a freshly-created order.
+  if (couponCode && discountInr > 0) {
+    void recordRedemption({
+      code: couponCode,
+      amountInr: discountInr,
+      customerId: cust.id,
+      orderNumber: session.orderNumber,
+    }).catch((e) => logger.error({ err: e, orderNumber: session.orderNumber }, "coupon redemption failed"));
+  }
+
   // Side effects (never block / fail the order).
   if (opts.paid) {
     await ensureInvoice(orderId);
@@ -417,8 +460,8 @@ export async function finalizeSessionToOrder(
   return {
     orderId,
     orderNumber: session.orderNumber,
-    totalInr: priced.totalInr,
-    advanceInr: priced.advanceInr,
+    totalInr: finalTotalInr,
+    advanceInr: finalAdvanceInr,
     alreadyExisted: false,
   };
 }

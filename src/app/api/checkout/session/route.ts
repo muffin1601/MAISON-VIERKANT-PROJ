@@ -31,6 +31,7 @@ const schema = z.object({
       }),
     )
     .min(1),
+  couponCode: z.string().trim().max(40).optional(),
 });
 
 /**
@@ -67,6 +68,7 @@ export async function POST(req: Request) {
       customer: parsed.data.customer,
       items: parsed.data.items,
       customerUserId: user?.role === "CUSTOMER" ? user.id : null,
+      couponCode: parsed.data.couponCode ?? null,
     });
     return NextResponse.json({ data: session }, { status: 201 });
   } catch (err) {

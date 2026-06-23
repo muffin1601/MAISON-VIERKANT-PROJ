@@ -85,6 +85,14 @@ export function CheckoutView({
   const [payError, setPayError] = useState("");
   const [placed, setPlaced] = useState<PlacedState | null>(null);
 
+  // Coupon state. The applied code lives in a ref so the session-creation effect
+  // (which doesn't depend on coupon state) always sends the latest code.
+  const [couponInput, setCouponInput] = useState("");
+  const [couponMsg, setCouponMsg] = useState("");
+  const [couponBusy, setCouponBusy] = useState(false);
+  const couponRef = useRef<string | null>(null);
+  const appliedCoupon = session?.discountInr && session.discountInr > 0 ? session.couponCode : null;
+
   const unitOf = (id: string, code: string) => priceMap[`${id}|${code}`]?.unit ?? 0;
   const clientTotal = items.reduce((s, i) => s + unitOf(i.id, i.code) * i.qty, 0);
   const total = session?.totalInr ?? clientTotal;
@@ -132,6 +140,7 @@ export function CheckoutView({
     createCheckoutSession(
       { ...d, name: d.name ?? "" },
       its.map((i) => ({ code: i.id, variantCode: i.code, finish: i.finish, qty: i.qty })),
+      couponRef.current,
     )
       .then(setSession)
       .catch((e) => setSessionError(e instanceof Error ? e.message : "Could not start checkout."))
@@ -140,6 +149,38 @@ export function CheckoutView({
         creating.current = false;
       });
   }, [step, placed, session]);
+
+  // Apply / remove a coupon by re-creating the session with the code. The server
+  // re-validates and returns discounted totals (or ignores an invalid code).
+  async function applyCoupon(remove = false) {
+    const code = remove ? null : couponInput.trim().toUpperCase();
+    setCouponBusy(true);
+    setCouponMsg("");
+    couponRef.current = code;
+    const { data: d, items: its } = latest.current;
+    try {
+      const next = await createCheckoutSession(
+        { ...d, name: d.name ?? "" },
+        its.map((i) => ({ code: i.id, variantCode: i.code, finish: i.finish, qty: i.qty })),
+        code,
+      );
+      setSession(next);
+      if (!remove) {
+        if (next.discountInr > 0) {
+          setCouponMsg(`Applied — you saved ${fmt(next.discountInr)}.`);
+        } else {
+          couponRef.current = null;
+          setCouponMsg("That code isn't valid for this order.");
+        }
+      } else {
+        setCouponInput("");
+      }
+    } catch {
+      setCouponMsg("Could not apply the coupon. Please try again.");
+    } finally {
+      setCouponBusy(false);
+    }
+  }
 
   function goToStep(n: number) {
     // Leaving the payment step invalidates the draft so totals are recomputed.
@@ -292,10 +333,42 @@ export function CheckoutView({
                     );
                   })}
                   <div style={{ borderTop: "1px solid rgba(248,245,240,.15)", paddingTop: 12, marginTop: 12 }}>
-                    <div className="co-sum-line"><span>Subtotal (incl. duty + GST)</span><span>{fmt(total)}</span></div>
+                    <div className="co-sum-line"><span>Subtotal (incl. duty + GST)</span><span>{fmt(total + (session?.discountInr ?? 0))}</span></div>
+                    {session?.discountInr ? (
+                      <div className="co-sum-line" style={{ color: "#7bd88f" }}>
+                        <span>Coupon {appliedCoupon ? `(${appliedCoupon})` : ""}</span>
+                        <span>−{fmt(session.discountInr)}</span>
+                      </div>
+                    ) : null}
                     <div className="co-sum-line" style={{ color: "rgba(212,185,120,.8)" }}><span>✓ Delhi delivery included</span></div>
                     <div className="co-sum-total"><span>Total</span><span>{fmt(total)}</span></div>
                     <div className="co-sum-line" style={{ color: "rgba(212,185,120,.9)", marginTop: 6 }}><span>50% advance to confirm</span><span>{fmt(advance)}</span></div>
+
+                    {/* Coupon */}
+                    {appliedCoupon ? (
+                      <div className="co-coupon-applied">
+                        <span>✓ {appliedCoupon} applied</span>
+                        <button type="button" className="ci-link" style={{ color: "#f8c" }} disabled={couponBusy} onClick={() => applyCoupon(true)}>
+                          Remove
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="co-coupon">
+                        <input
+                          value={couponInput}
+                          placeholder="Coupon code"
+                          aria-label="Coupon code"
+                          onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+                          onKeyDown={(e) => e.key === "Enter" && couponInput.trim() && applyCoupon()}
+                        />
+                        <button type="button" className="btn-gold-outline" style={{ padding: "9px 16px", fontSize: 12 }} disabled={couponBusy || !couponInput.trim()} onClick={() => applyCoupon()}>
+                          {couponBusy ? "…" : "Apply"}
+                        </button>
+                      </div>
+                    )}
+                    {couponMsg && (
+                      <div style={{ fontSize: 11, marginTop: 6, color: session?.discountInr ? "#7bd88f" : "#f3a" }}>{couponMsg}</div>
+                    )}
                   </div>
                 </div>
                 <div className="co-trust">

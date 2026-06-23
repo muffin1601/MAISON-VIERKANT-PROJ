@@ -138,6 +138,69 @@ export function buildReceipt(orderNumber: string): string {
   return `rcpt_${orderNumber}`.slice(0, 40);
 }
 
+// ---------- Token vault (saved cards) ----------
+
+/** Create (or reuse) a Razorpay customer for the vault. Returns the cust_xxx id. */
+export async function createOrFetchRazorpayCustomer(params: {
+  name: string;
+  email?: string | null;
+  contact?: string | null;
+}): Promise<string> {
+  // fail_existing: 0 returns the existing customer instead of erroring on dupes.
+  const customer = (await getClient().customers.create({
+    name: params.name,
+    email: params.email || undefined,
+    contact: params.contact || undefined,
+    fail_existing: 0,
+  })) as unknown as { id: string };
+  return customer.id;
+}
+
+export interface FetchedCardToken {
+  tokenId: string;
+  network: string | null;
+  last4: string | null;
+  issuer: string | null;
+  expiryMonth: number | null;
+  expiryYear: number | null;
+}
+
+/**
+ * Fetch a captured payment and extract its saved-card token, if the customer chose
+ * to save the card. Returns null when there's no token (most payments). Never throws.
+ */
+export async function fetchPaymentToken(paymentId: string): Promise<FetchedCardToken | null> {
+  try {
+    const payment = (await getClient().payments.fetch(paymentId)) as unknown as {
+      token_id?: string;
+      card?: { network?: string; last4?: string; issuer?: string };
+    };
+    if (!payment?.token_id) return null;
+    return {
+      tokenId: payment.token_id,
+      network: payment.card?.network ?? null,
+      last4: payment.card?.last4 ?? null,
+      issuer: payment.card?.issuer ?? null,
+      expiryMonth: null,
+      expiryYear: null,
+    };
+  } catch (err) {
+    logger.warn({ err, paymentId }, "fetchPaymentToken failed");
+    return null;
+  }
+}
+
+/** Delete a saved token from the Razorpay vault. Best-effort; returns success bool. */
+export async function deleteCardToken(customerId: string, tokenId: string): Promise<boolean> {
+  try {
+    await getClient().customers.deleteToken(customerId, tokenId);
+    return true;
+  } catch (err) {
+    logger.warn({ err, tokenId }, "deleteCardToken failed");
+    return false;
+  }
+}
+
 /** Constant-time hex string comparison (guards signature checks against timing attacks). */
 function timingSafeEqualHex(a: string, b: string): boolean {
   try {

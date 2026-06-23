@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { recordAudit } from "@/lib/audit";
 import { logger } from "@/lib/logger";
+import { rateLimit, clientIp } from "@/lib/rate-limit";
+import { razorpayWebhookReady } from "@/lib/env";
 import { verifyWebhookSignature } from "@/services/payment/razorpayService";
 import { markPaymentRefunded } from "@/services/payment/paymentOrders";
 import { finalizeSessionToOrder, markSessionFailedByGatewayOrder } from "@/services/checkout/checkoutSession";
@@ -17,6 +19,21 @@ export const dynamic = "force-dynamic";
  * X-Razorpay-Signature against the RAW body; rejects anything unsigned/invalid.
  */
 export async function POST(req: Request) {
+  // Coarse abuse guard. Legit Razorpay bursts are small; this only blunts floods.
+  const rl = await rateLimit(`pay-webhook:${clientIp(req)}`, 240, 60 * 1000);
+  if (!rl.ok) {
+    return NextResponse.json({ error: "rate limited" }, { status: 429 });
+  }
+
+  // Loud, actionable signal when the webhook secret was never configured: every
+  // event will be rejected below, silently breaking async payment confirmation.
+  if (!razorpayWebhookReady) {
+    logger.error(
+      "webhook: RAZORPAY_WEBHOOK_SECRET is not set — webhook confirmation is DISABLED. " +
+        "Set it from Razorpay Dashboard → Settings → Webhooks to enable paid-but-tab-closed recovery.",
+    );
+  }
+
   const raw = await req.text();
   const signature = req.headers.get("x-razorpay-signature");
 

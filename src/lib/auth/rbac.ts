@@ -50,6 +50,8 @@ export const ADMIN_NAV: AdminNavItem[] = [
   { href: "/admin/stock", label: "Stock", permission: "inventory.read" },
   { href: "/admin/orders", label: "Orders", permission: "orders.read" },
   { href: "/admin/payments", label: "Payments", permission: "payments.read" },
+  { href: "/admin/coupons", label: "Coupons", permission: "pricing.read" },
+  { href: "/admin/support", label: "Support & Returns", permission: "leads.read" },
   { href: "/admin/payment-settings", label: "Payment Settings", permission: "settings.manage" },
   { href: "/admin/leads", label: "Catalogue Leads", permission: "leads.read" },
   { href: "/admin/customers", label: "Customers", permission: "customers.read" },

@@ -41,8 +41,10 @@ export const ORDER_STATUS_META: Record<string, OrderStatusMeta> = {
   IN_PRODUCTION:     { key: "IN_PRODUCTION",     label: "In Production",      color: "#6a4a1a", step: 3 },
   READY_TO_DISPATCH: { key: "READY_TO_DISPATCH", label: "Ready to Dispatch",  color: "#7a5cc0", step: 4 },
   DISPATCHED:        { key: "DISPATCHED",        label: "Dispatched",         color: "#1565c0", step: 5 },
+  OUT_FOR_DELIVERY:  { key: "OUT_FOR_DELIVERY",  label: "Out for Delivery",   color: "#1565c0", step: 5 },
   DELIVERED:         { key: "DELIVERED",         label: "Delivered",          color: "#2e7d32", step: 6 },
   CANCELLED:         { key: "CANCELLED",         label: "Cancelled",          color: "#b71c1c", step: -1 },
+  RETURNED:          { key: "RETURNED",          label: "Returned",           color: "#6a1b9a", step: -1 },
   PAYMENT_REJECTED:  { key: "PAYMENT_REJECTED",  label: "Payment Rejected",   color: "#b71c1c", step: 0 },
   // ---- legacy (display only) ----
   PENDING:    { key: "PENDING",    label: "Pending",    color: "#a07a2a", step: -1, legacy: true },
@@ -60,9 +62,69 @@ export const ADMIN_ASSIGNABLE_STATUSES = [
   "IN_PRODUCTION",
   "READY_TO_DISPATCH",
   "DISPATCHED",
+  "OUT_FOR_DELIVERY",
   "DELIVERED",
   "CANCELLED",
+  "RETURNED",
 ] as const;
+
+/**
+ * Customer-facing retail timeline (Myntra style). The internal lifecycle is mapped
+ * onto six familiar stages; terminal states (Cancelled/Returned/Refunded) replace
+ * the progress bar with a single status pill.
+ */
+export const RETAIL_STAGES = [
+  "Placed",
+  "Confirmed",
+  "Packed",
+  "Shipped",
+  "Out for Delivery",
+  "Delivered",
+] as const;
+
+const RETAIL_STAGE_INDEX: Record<string, number> = {
+  PENDING_PAYMENT: 0,
+  PAYMENT_PROCESSING: 0,
+  PAYMENT_SUBMITTED: 0,
+  PAYMENT_FAILED: 0,
+  PAYMENT_REJECTED: 0,
+  PENDING: 0,
+  PAYMENT_VERIFIED: 1,
+  CONFIRMED: 1,
+  IN_PRODUCTION: 2,
+  READY_TO_DISPATCH: 2,
+  PROCESSING: 2,
+  DISPATCHED: 3,
+  SHIPPED: 3,
+  OUT_FOR_DELIVERY: 4,
+  DELIVERED: 5,
+};
+
+const TERMINAL_STATUSES = new Set(["CANCELLED", "RETURNED", "REFUNDED"]);
+
+export interface RetailTimeline {
+  terminal: OrderStatusMeta | null; // set for Cancelled/Returned/Refunded
+  currentIndex: number; // -1 when terminal
+  stages: { label: string; done: boolean; current: boolean }[];
+}
+
+/** Build the customer-facing timeline for an internal order status. */
+export function retailTimeline(status: string): RetailTimeline {
+  const key = status?.toUpperCase() ?? "";
+  if (TERMINAL_STATUSES.has(key)) {
+    return {
+      terminal: statusMeta(key),
+      currentIndex: -1,
+      stages: RETAIL_STAGES.map((label) => ({ label, done: false, current: false })),
+    };
+  }
+  const idx = RETAIL_STAGE_INDEX[key] ?? 0;
+  return {
+    terminal: null,
+    currentIndex: idx,
+    stages: RETAIL_STAGES.map((label, i) => ({ label, done: i < idx, current: i === idx })),
+  };
+}
 
 export function statusMeta(status: string): OrderStatusMeta {
   return (

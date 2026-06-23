@@ -21,14 +21,23 @@ export type OrderStatus = (typeof ORDER_STATUSES)[number];
  */
 export const updateOrderStatus = withPermission(
   "orders.write",
-  async (user, input: { number: string; status: OrderStatus; trackingNumber?: string }) => {
+  async (
+    user,
+    input: {
+      number: string;
+      status: OrderStatus;
+      trackingNumber?: string;
+      courier?: string;
+      trackingUrl?: string;
+    },
+  ) => {
     if (!ORDER_STATUSES.includes(input.status)) {
       throw new Error("Invalid status");
     }
     let order;
     const prev = await prisma.order.findUnique({
       where: { number: input.number },
-      select: { status: true },
+      select: { status: true, id: true, trackingNumber: true },
     });
     try {
       order = await prisma.order.update({
@@ -38,9 +47,22 @@ export const updateOrderStatus = withPermission(
           ...(input.trackingNumber !== undefined
             ? { trackingNumber: input.trackingNumber || null }
             : {}),
+          ...(input.courier !== undefined ? { courier: input.courier || null } : {}),
+          ...(input.trackingUrl !== undefined ? { trackingUrl: input.trackingUrl || null } : {}),
         },
         include: { customer: true },
       });
+      // Append a timeline event only when the status actually changes.
+      if (prev && prev.status !== input.status) {
+        await prisma.orderStatusEvent.create({
+          data: {
+            orderId: order.id,
+            status: input.status,
+            actorId: user.id,
+            note: input.trackingNumber ? `Tracking: ${input.trackingNumber}` : null,
+          },
+        });
+      }
     } catch (err) {
       // Unknown order number → return a clean result instead of a raw 500.
       if (err && typeof err === "object" && "code" in err && err.code === "P2025") {
@@ -49,7 +71,9 @@ export const updateOrderStatus = withPermission(
       throw err;
     }
 
-    if (order.customer.email) {
+    const statusChanged = prev?.status !== order.status;
+    const trackingChanged = (prev?.trackingNumber ?? null) !== (order.trackingNumber ?? null);
+    if (order.customer.email && (statusChanged || trackingChanged)) {
       void sendOrderStatusEmail({
         to: order.customer.email,
         name: order.customer.name,

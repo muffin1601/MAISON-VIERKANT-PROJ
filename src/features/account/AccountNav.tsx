@@ -8,6 +8,9 @@ const TABS = [
   { href: "/account/orders", label: "Orders" },
   { href: "/account/addresses", label: "Addresses" },
   { href: "/wishlist", label: "Wishlist" },
+  { href: "/account/coupons", label: "Coupons" },
+  { href: "/account/support", label: "Support" },
+  { href: "/account/profile", label: "Edit Profile" },
 ];
 
 export function AccountNav() {

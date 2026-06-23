@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { fmt } from "@/lib/format";
 import type { CustomerWithOrders } from "@/services/account/queries";
 import { statusMeta } from "@/lib/orderStatus";
@@ -66,7 +67,9 @@ export function OrderList({
               }}
             >
               <div>
-                <div style={{ fontSize: 14, fontWeight: 600, color: "var(--gold)" }}>{o.number}</div>
+                <Link href={`/account/orders/${o.number}`} style={{ fontSize: 14, fontWeight: 600, color: "var(--gold)" }}>
+                  {o.number}
+                </Link>
                 <div style={{ fontSize: 11, color: "var(--ink4)" }}>
                   {new Date(o.createdAt).toLocaleDateString("en-IN", {
                     day: "numeric",
@@ -75,7 +78,12 @@ export function OrderList({
                   })}
                 </div>
               </div>
-              <StatusBadge status={o.status} />
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <StatusBadge status={o.status} />
+                <Link href={`/account/orders/${o.number}`} style={{ fontSize: 11, color: "var(--gold)" }}>
+                  View →
+                </Link>
+              </div>
             </div>
             <div style={{ borderTop: "1px solid var(--cream2)", paddingTop: 10 }}>
               {o.items.map((it) => (
