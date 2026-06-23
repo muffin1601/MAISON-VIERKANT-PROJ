@@ -1,9 +1,14 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { updateOrderStatus, ORDER_STATUSES, type OrderStatus } from "./actions";
-import { statusMeta } from "@/lib/orderStatus";
+import { updateOrderStatus, type OrderStatus } from "./actions";
+// NOTE: import the status array from the PLAIN lib, never from the "use server"
+// actions module — non-async exports from a server-actions file are not real
+// values on the client in a production build (caused "n.includes is not a function").
+import { ADMIN_ASSIGNABLE_STATUSES, statusMeta } from "@/lib/orderStatus";
 import { showToast } from "@/lib/toast";
+
+const ORDER_STATUSES = ADMIN_ASSIGNABLE_STATUSES;
 
 /**
  * Admin order fulfilment control: status + tracking number + courier + tracking URL
@@ -25,7 +30,7 @@ export function OrderFulfilment({
   canWrite: boolean;
 }) {
   const [open, setOpen] = useState(false);
-  const [value, setValue] = useState(status.toUpperCase());
+  const [value, setValue] = useState(String(status ?? "").toUpperCase());
   const [track, setTrack] = useState(trackingNumber);
   const [crr, setCrr] = useState(courier);
   const [url, setUrl] = useState(trackingUrl);

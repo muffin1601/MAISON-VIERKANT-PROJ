@@ -110,7 +110,8 @@ export interface RetailTimeline {
 
 /** Build the customer-facing timeline for an internal order status. */
 export function retailTimeline(status: string): RetailTimeline {
-  const key = status?.toUpperCase() ?? "";
+  // Coerce defensively — production data may surface null/number/undefined.
+  const key = String(status ?? "").toUpperCase();
   if (TERMINAL_STATUSES.has(key)) {
     return {
       terminal: statusMeta(key),
@@ -127,10 +128,11 @@ export function retailTimeline(status: string): RetailTimeline {
 }
 
 export function statusMeta(status: string): OrderStatusMeta {
+  const key = String(status ?? "").toUpperCase();
   return (
-    ORDER_STATUS_META[status?.toUpperCase()] ?? {
-      key: status,
-      label: status,
+    ORDER_STATUS_META[key] ?? {
+      key,
+      label: key || "Unknown",
       color: "#6b6b6b",
       step: -1,
     }

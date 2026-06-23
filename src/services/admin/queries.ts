@@ -39,7 +39,7 @@ export async function getDashboard() {
     date: o.createdAt.toISOString().slice(0, 10),
     client: o.customer?.name ?? "—",
     total: Number(o.totalInr),
-    status: o.status.toLowerCase(),
+    status: String(o.status ?? "").toLowerCase(),
   }));
 
   const lowStock = low.map((i) => ({
@@ -101,9 +101,9 @@ export async function getOrders() {
     id: o.number,
     date: o.createdAt.toISOString().slice(0, 10),
     client: o.customer?.name ?? "—",
-    items: o.items.map((it) => `${it.product.name} ×${it.qty}`).join(", ") || "—",
+    items: o.items.map((it) => `${it.product?.name ?? "Item"} ×${it.qty}`).join(", ") || "—",
     total: Number(o.totalInr),
-    status: o.status.toLowerCase(),
+    status: String(o.status ?? "").toLowerCase(),
     trackingNumber: o.trackingNumber ?? "",
     courier: o.courier ?? "",
     trackingUrl: o.trackingUrl ?? "",

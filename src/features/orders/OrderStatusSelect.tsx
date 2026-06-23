@@ -1,9 +1,13 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { updateOrderStatus, ORDER_STATUSES, type OrderStatus } from "./actions";
-import { statusMeta } from "@/lib/orderStatus";
+import { updateOrderStatus, type OrderStatus } from "./actions";
+// Status array MUST come from the plain lib, not the "use server" actions module
+// (non-async server-action exports aren't real values on the client in prod).
+import { ADMIN_ASSIGNABLE_STATUSES, statusMeta } from "@/lib/orderStatus";
 import { showToast } from "@/lib/toast";
+
+const ORDER_STATUSES = ADMIN_ASSIGNABLE_STATUSES;
 
 /** Inline admin control to change an order's status (emails the customer). */
 export function OrderStatusSelect({
@@ -15,7 +19,7 @@ export function OrderStatusSelect({
   status: string;
   canWrite: boolean;
 }) {
-  const [value, setValue] = useState(status.toUpperCase());
+  const [value, setValue] = useState(String(status ?? "").toUpperCase());
   const [pending, startTransition] = useTransition();
   const meta = statusMeta(value);
 
