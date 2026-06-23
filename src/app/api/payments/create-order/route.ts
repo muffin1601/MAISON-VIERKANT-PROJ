@@ -114,6 +114,15 @@ export async function POST(req: Request) {
     });
   } catch (err) {
     logger.error({ err }, "create-order failed");
+    // Surface Razorpay's own validation reason (e.g. "Amount exceeds maximum
+    // amount allowed." in test/unactivated accounts) instead of a blank 500.
+    const rzp = err as { statusCode?: number; error?: { description?: string } };
+    if (rzp?.statusCode === 400 && rzp.error?.description) {
+      return NextResponse.json(
+        { error: { message: `Payment couldn't start: ${rzp.error.description}` } },
+        { status: 400 },
+      );
+    }
     return NextResponse.json(
       { error: { message: "Could not start payment. Please try again." } },
       { status: 500 },

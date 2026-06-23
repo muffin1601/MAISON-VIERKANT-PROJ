@@ -2353,3 +2353,79 @@ summary:focus-visible {
 .route-loading .skeleton-card {
   height: 120px;
 }
+
+/* ---------- Assistant product cards + typing animation ---------- */
+.cb-products {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+.cb-product {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #fff;
+  border: 1px solid var(--line, #e3ddd3);
+  border-radius: 10px;
+  padding: 8px;
+}
+.cb-product-img {
+  width: 46px;
+  height: 46px;
+  border-radius: 7px;
+  object-fit: cover;
+  background: var(--cream2, #efe9df);
+  flex: 0 0 auto;
+}
+.cb-product-info {
+  flex: 1;
+  min-width: 0;
+}
+.cb-product-name {
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cb-product-price {
+  font-size: 11px;
+  color: var(--gold, #9a7b3f);
+}
+.cb-product-btn {
+  flex: 0 0 auto;
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff;
+  background: var(--ink, #1c1a17);
+  border-radius: 999px;
+  padding: 6px 12px;
+}
+
+/* Animated typing dots (replaces the static "…") */
+.cb-typing {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+}
+.cb-typing span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ink4, #6b6256);
+  animation: cb-bounce 1.2s infinite ease-in-out both;
+}
+.cb-typing span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+.cb-typing span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+@keyframes cb-bounce {
+  0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+  40% { transform: scale(1); opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cb-typing span { animation: none; }
+}
