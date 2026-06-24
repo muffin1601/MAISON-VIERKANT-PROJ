@@ -140,7 +140,7 @@ export function OnlinePaymentsTable({
           aria-label="Search online payments"
           style={{
             border: "1px solid var(--cream3)",
-            borderRadius: 3,
+            borderRadius: 2,
             padding: "9px 12px",
             fontSize: 12,
             minWidth: 260,

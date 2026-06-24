@@ -74,7 +74,7 @@ const s = StyleSheet.create({
   grandRow: { flexDirection: "row", width: 240, justifyContent: "space-between", borderTopWidth: 1, borderTopColor: GOLD2, marginTop: 6, paddingTop: 7 },
   grandLabel: { fontSize: 11, fontFamily: "Helvetica-Bold", color: INK },
   grandValue: { fontSize: 13, fontFamily: "Helvetica-Bold", color: GOLD },
-  payBox: { marginTop: 20, padding: 14, backgroundColor: CREAM2, borderRadius: 3 },
+  payBox: { marginTop: 20, padding: 14, backgroundColor: CREAM2, borderRadius: 2 },
   payTitle: { fontSize: 8, letterSpacing: 1.5, color: GOLD, marginBottom: 6, fontFamily: "Helvetica-Bold", textTransform: "uppercase" },
   payLine: { fontSize: 8, color: INK3, marginBottom: 3 },
   footer: { position: "absolute", bottom: 24, left: 44, right: 44, borderTopWidth: 0.5, borderTopColor: CREAM3, paddingTop: 8, flexDirection: "row", justifyContent: "space-between" },

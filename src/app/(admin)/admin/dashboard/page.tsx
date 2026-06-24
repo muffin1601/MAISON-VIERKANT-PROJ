@@ -90,7 +90,7 @@ export default async function DashboardPage() {
                         fontSize: 10,
                         color: statusMeta(o.status).color,
                         border: `1px solid ${statusMeta(o.status).color}`,
-                        borderRadius: 20,
+                        borderRadius: 2,
                         padding: "2px 9px",
                         whiteSpace: "nowrap",
                       }}

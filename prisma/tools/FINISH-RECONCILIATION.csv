@@ -1,0 +1,42 @@
+Product Code,Product Name,Status,Current Finishes in DB,Recommended Action,Notes
+SRD,SRD,Exists in Excel Only,,Manual Review,Product present in Excel but not found in database
+AB_56650,AB,DB Only - Non Standard Finishes,"White, Grey, Black, Red, Bordeaux, Clay",Manual Review,"Uses non-catalogue finish names: Grey, Black, Red, Bordeaux, Clay"
+AH130_01162,AH130,DB Only - No Finishes Applied,,Add Finishes,Product exists in database but not in Excel source
+AHB_05074,AHB,DB Only - No Finishes Applied,,Add Finishes,Product exists in database but not in Excel source
+AHC_37899,AHC,DB Only - No Finishes Applied,,Add Finishes,Product exists in database but not in Excel source
+AHE_51725,AHE,DB Only - No Finishes Applied,,Add Finishes,Product exists in database but not in Excel source
+AHO_82250,AHO,DB Only - No Finishes Applied,,Add Finishes,Product exists in database but not in Excel source
+AHP_73015,AHP,DB Only - Non Standard Finishes,Red,Manual Review,Uses non-catalogue finish names: Red
+AHS_14663,AHS,DB Only - No Finishes Applied,,Add Finishes,Product exists in database but not in Excel source
+AHSB_99315,AHSB,DB Only - No Finishes Applied,,Add Finishes,Product exists in database but not in Excel source
+AHT_33304,AHT,DB Only - No Finishes Applied,,Add Finishes,Product exists in database but not in Excel source
+ASL_63191,ASL,DB Only - Non Standard Finishes,Bronze,Manual Review,Uses non-catalogue finish names: Bronze
+ATELIER_VIERKANT___COLLECTION_2022_228_CSD_CSD15C_W_CSD15W_C_CSD15W_89216,CSD ,DB Only - No Finishes Applied,,Add Finishes,Product exists in database but not in Excel source
+ATELIER_VIERKANT___COLLECTION_2022_WWW_ATELIERVIERKANT_COM_78_79_38082,ALPH-BENCH,DB Only - Non Standard Finishes,Clay,Manual Review,Uses non-catalogue finish names: Clay
+AU_16747,AU,DB Only - No Finishes Applied,,Add Finishes,Product exists in database but not in Excel source
+AUB_65520,AUB,DB Only - Non Standard Finishes,"Grey, Ivory",Manual Review,Uses non-catalogue finish names: Grey
+AUB180_58508,AUB180,DB Only - No Finishes Applied,,Add Finishes,Product exists in database but not in Excel source
+AUO_68493,AUO,DB Only - No Finishes Applied,,Add Finishes,Product exists in database but not in Excel source
+AUS100_60567,AUS100,DB Only - Non Standard Finishes,"White, Grey, Red",Manual Review,"Uses non-catalogue finish names: Grey, Red"
+AUS180_58937,AUS180,DB Only - No Finishes Applied,,Add Finishes,Product exists in database but not in Excel source
+B_CUBE_57845,B CUBE,DB Only - Non Standard Finishes,"Grey, Black",Manual Review,"Uses non-catalogue finish names: Grey, Black"
+BE4545_12492,BE4545,DB Only - Non Standard Finishes,"White, Anthracite, Black, Brown, Gold",Manual Review,"Uses non-catalogue finish names: Black, Brown, Gold"
+CBH180_17881,CBH180,DB Only - No Finishes Applied,,Add Finishes,Product exists in database but not in Excel source
+CVI_55823,CVI,DB Only - No Finishes Applied,,Add Finishes,Product exists in database but not in Excel source
+EMBRACE_SEAT_60550,EMBRACE SEAT,DB Only - Non Standard Finishes,Clay,Manual Review,Uses non-catalogue finish names: Clay
+FGS_SEAT_64568,FGS SEAT,DB Only - No Finishes Applied,,Add Finishes,Product exists in database but not in Excel source
+JANUA_JANUS_01074,JANUA JANUS,DB Only - No Finishes Applied,,Add Finishes,Product exists in database but not in Excel source
+KH_LEATHER_13748,KH Leather,DB Only - Non Standard Finishes,"Rust, Clay",Manual Review,"Uses non-catalogue finish names: Rust, Clay"
+KHL_19273,KHL,DB Only - No Finishes Applied,,Add Finishes,Product exists in database but not in Excel source
+KHO_08851,KHO,DB Only - No Finishes Applied,,Add Finishes,Product exists in database but not in Excel source
+KR120_15305,KR120,DB Only - No Finishes Applied,,Add Finishes,Product exists in database but not in Excel source
+LPS100_53061,LPS100,DB Only - Non Standard Finishes,"White, Grey, Black, Red, Green, Clay",Manual Review,"Uses non-catalogue finish names: Grey, Black, Red, Green, Clay"
+MLH_BENCH_32357,MLH BENCH,DB Only - No Finishes Applied,,Add Finishes,Product exists in database but not in Excel source
+RVB_26638,RVB,DB Only - Non Standard Finishes,Clay,Manual Review,Uses non-catalogue finish names: Clay
+RVC_43399,RVC,DB Only - No Finishes Applied,,Add Finishes,Product exists in database but not in Excel source
+SB_90615,SB 15,DB Only - No Finishes Applied,,Add Finishes,Product exists in database but not in Excel source
+SB30_64661,SB30,DB Only - No Finishes Applied,,Add Finishes,Product exists in database but not in Excel source
+TAJ100_44130,TAJ100,DB Only - No Finishes Applied,,Add Finishes,Product exists in database but not in Excel source
+TAJ150_40621,TAJ150,DB Only - No Finishes Applied,,Add Finishes,Product exists in database but not in Excel source
+TORSA_70_55183,TORSA 70,DB Only - No Finishes Applied,,Add Finishes,Product exists in database but not in Excel source
+WT_70875,WT,DB Only - No Finishes Applied,,Add Finishes,Product exists in database but not in Excel source

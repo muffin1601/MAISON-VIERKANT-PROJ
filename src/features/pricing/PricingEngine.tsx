@@ -204,7 +204,7 @@ export function PricingEngine({
                   marginTop: 12,
                   background: "#fbf3e6",
                   border: "1px solid #e6d3a8",
-                  borderRadius: 4,
+                  borderRadius: 2,
                   padding: "10px 13px",
                   fontSize: 11,
                   color: "var(--ink3)",

@@ -157,7 +157,7 @@ export function QuoteBuilder({
               return (
                 <div
                   key={i}
-                  style={{ background: "var(--cream2)", border: "1px solid var(--cream3)", borderRadius: 4, padding: 12, marginBottom: 10 }}
+                  style={{ background: "var(--cream2)", border: "1px solid var(--cream3)", borderRadius: 2, padding: 12, marginBottom: 10 }}
                 >
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
                     <div>

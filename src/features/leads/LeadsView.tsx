@@ -186,7 +186,7 @@ function LeadStatusCell({ id, status, canWrite }: { id: string; status: string; 
       disabled={pending}
       onChange={(e) => onChange(e.target.value)}
       className="sbadge s-confirmed"
-      style={{ border: "1px solid var(--cream3)", borderRadius: 4, padding: "4px 8px", fontSize: 11 }}
+      style={{ border: "1px solid var(--cream3)", borderRadius: 2, padding: "4px 8px", fontSize: 11 }}
       aria-label="Lead status"
     >
       {LEAD_STATUSES.map((s) => (

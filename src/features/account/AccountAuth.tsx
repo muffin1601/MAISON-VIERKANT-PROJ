@@ -122,7 +122,7 @@ export function AccountAuth({ mode }: { mode: Mode }) {
             style={{
               background: "var(--cream2)",
               border: "1px solid var(--cream3)",
-              borderRadius: 4,
+              borderRadius: 2,
               padding: "16px 18px",
               fontSize: 13,
               lineHeight: 1.7,
@@ -146,7 +146,7 @@ export function AccountAuth({ mode }: { mode: Mode }) {
                   background: "#fbeaea",
                   border: "1px solid #e3b6b6",
                   color: "var(--danger)",
-                  borderRadius: 3,
+                  borderRadius: 2,
                   padding: "10px 13px",
                   fontSize: 12,
                   marginBottom: 14,

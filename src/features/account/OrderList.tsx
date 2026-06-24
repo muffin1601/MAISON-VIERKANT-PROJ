@@ -14,7 +14,7 @@ function StatusBadge({ status }: { status: string }) {
         letterSpacing: ".08em",
         color: meta.color,
         border: `1px solid ${meta.color}`,
-        borderRadius: 20,
+        borderRadius: 2,
         padding: "3px 10px",
         background: "#fff",
         whiteSpace: "nowrap",
@@ -51,7 +51,7 @@ export function OrderList({
             key={o.id}
             style={{
               border: "1px solid var(--cream3)",
-              borderRadius: 6,
+              borderRadius: 2,
               padding: "16px 18px",
               background: "#fff",
             }}

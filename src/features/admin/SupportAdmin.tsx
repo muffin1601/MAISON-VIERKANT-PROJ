@@ -79,7 +79,7 @@ export function SupportAdmin({ initial }: { initial: TicketRow[] }) {
                       value={t.status}
                       onClick={(e) => e.stopPropagation()}
                       onChange={(e) => setStatus(t.id, e.target.value)}
-                      style={{ fontSize: 11, padding: "3px 8px", borderRadius: 6 }}
+                      style={{ fontSize: 11, padding: "3px 8px", borderRadius: 2 }}
                     >
                       {STATUSES.map((s) => (
                         <option key={s} value={s}>{s.replace("_", " ")}</option>

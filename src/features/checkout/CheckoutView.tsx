@@ -477,7 +477,7 @@ function Step1({
         <div className="co-field">
           <label htmlFor="phone">Phone (India) *</label>
           <div style={{ display: "flex", gap: 8 }}>
-            <span style={{ padding: "11px 12px", background: "var(--cream2)", border: "1px solid var(--cream3)", borderRadius: 3, fontSize: 13, color: "var(--ink3)" }}>+91</span>
+            <span style={{ padding: "11px 12px", background: "var(--cream2)", border: "1px solid var(--cream3)", borderRadius: 2, fontSize: 13, color: "var(--ink3)" }}>+91</span>
             <input id="phone" name="phone" type="tel" autoComplete="tel-national" inputMode="numeric" className={errors.phone ? "error" : undefined} aria-invalid={errors.phone ? true : undefined} value={data.phone || ""} placeholder="98100 00000" maxLength={10} style={{ flex: 1 }} onChange={(e) => set({ phone: e.target.value.replace(/\D/g, "") })} />
           </div>
           {errors.phone && <span className="co-field-err" role="alert">{errors.phone}</span>}
@@ -543,7 +543,7 @@ function ReviewStep({
         );
       })}
       <div className="co-section-title" style={{ marginTop: 20 }}>Delivery Details</div>
-      <div style={{ background: "var(--cream2)", borderRadius: 4, padding: "14px 16px", fontSize: 12, lineHeight: 2, color: "var(--ink3)" }}>
+      <div style={{ background: "var(--cream2)", borderRadius: 2, padding: "14px 16px", fontSize: 12, lineHeight: 2, color: "var(--ink3)" }}>
         <strong style={{ color: "var(--ink)" }}>{data.name}</strong>
         {data.company ? ` · ${data.company}` : ""}
         <br />+91 {data.phone} · {data.email}
@@ -667,7 +667,7 @@ function PaymentStep({
       {/* Notes */}
       <div className="co-field" style={{ marginTop: 18 }}>
         <label>Notes / Special Requirements</label>
-        <textarea rows={2} placeholder="Special instructions, project name, installation notes…" value={notes} onChange={(e) => setNotes(e.target.value)} style={{ border: "1px solid var(--cream3)", borderRadius: 3, padding: 11, fontSize: 12, fontFamily: "'Jost', sans-serif", color: "var(--ink)", resize: "vertical" }} />
+        <textarea rows={2} placeholder="Special instructions, project name, installation notes…" value={notes} onChange={(e) => setNotes(e.target.value)} style={{ border: "1px solid var(--cream3)", borderRadius: 2, padding: 11, fontSize: 12, fontFamily: "'Jost', sans-serif", color: "var(--ink)", resize: "vertical" }} />
       </div>
 
       {/* Method-specific panel */}
@@ -685,7 +685,7 @@ function PaymentStep({
       )}
 
       {payError && (
-        <div role="alert" style={{ background: "#fbeaea", border: "1px solid #e3b6b6", color: "var(--danger)", borderRadius: 3, padding: "10px 13px", fontSize: 12, lineHeight: 1.6, margin: "14px 0 4px" }}>
+        <div role="alert" style={{ background: "#fbeaea", border: "1px solid #e3b6b6", color: "var(--danger)", borderRadius: 2, padding: "10px 13px", fontSize: 12, lineHeight: 1.6, margin: "14px 0 4px" }}>
           {payError}
         </div>
       )}

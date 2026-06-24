@@ -62,7 +62,7 @@ export function OrderPaymentActions({
           padding: "10px 12px",
           background: "#eef4fb",
           border: "1px solid #c9ddf2",
-          borderRadius: 6,
+          borderRadius: 2,
           fontSize: 12.5,
           color: "#1565c0",
         }}
@@ -105,7 +105,7 @@ export function OrderPaymentActions({
             padding: "10px 12px",
             background: "#fbeaea",
             border: "1px solid #e3b6b6",
-            borderRadius: 6,
+            borderRadius: 2,
             fontSize: 12.5,
             color: "#8b2c2c",
             marginBottom: 10,
@@ -125,7 +125,7 @@ export function OrderPaymentActions({
           Submit Payment Proof ({fmt(amountDue)})
         </button>
       ) : (
-        <div style={{ border: "1px solid var(--cream3)", borderRadius: 8, padding: 16, marginTop: 8 }}>
+        <div style={{ border: "1px solid var(--cream3)", borderRadius: 2, padding: 16, marginTop: 8 }}>
           <BankDetailsCard settings={settings} amount={amountDue} reference={orderNumber} />
 
           <form onSubmit={onSubmit} style={{ marginTop: 16, display: "grid", gap: 12 }}>
@@ -208,7 +208,7 @@ const lbl: React.CSSProperties = {
 };
 const inp: React.CSSProperties = {
   border: "1px solid var(--cream3)",
-  borderRadius: 4,
+  borderRadius: 2,
   padding: "9px 11px",
   fontSize: 13,
   fontFamily: "'Jost', sans-serif",

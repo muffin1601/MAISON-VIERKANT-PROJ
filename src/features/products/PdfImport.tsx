@@ -212,7 +212,7 @@ export function PdfImport({ hasExistingData, onApply, onClose }: Props) {
       onClick={busy ? undefined : onClose}
     >
       <div
-        style={{ maxWidth: 720, margin: "0 auto", background: "var(--white)", borderRadius: 6, overflow: "hidden", boxShadow: "0 24px 80px rgba(0,0,0,.5)" }}
+        style={{ maxWidth: 720, margin: "0 auto", background: "var(--white)", borderRadius: 2, overflow: "hidden", boxShadow: "0 24px 80px rgba(0,0,0,.5)" }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -242,7 +242,7 @@ export function PdfImport({ hasExistingData, onApply, onClose }: Props) {
                 style={{
                   border: `2px dashed ${dragOver ? "var(--gold)" : "var(--cream3)"}`,
                   background: dragOver ? "var(--cream2)" : "transparent",
-                  borderRadius: 6, padding: "40px 20px", textAlign: "center", cursor: "pointer",
+                  borderRadius: 2, padding: "40px 20px", textAlign: "center", cursor: "pointer",
                   transition: "all .15s",
                 }}
               >
@@ -257,7 +257,7 @@ export function PdfImport({ hasExistingData, onApply, onClose }: Props) {
               </div>
 
               {/* What happens — simple, non-technical */}
-              <div style={{ background: "var(--cream2)", border: "1px solid var(--cream3)", borderRadius: 4, padding: "12px 14px" }}>
+              <div style={{ background: "var(--cream2)", border: "1px solid var(--cream3)", borderRadius: 2, padding: "12px 14px" }}>
                 <div style={{ fontSize: 10, letterSpacing: ".12em", textTransform: "uppercase", color: "var(--gold)", marginBottom: 8, fontWeight: 600 }}>
                   How it works
                 </div>
@@ -273,7 +273,7 @@ export function PdfImport({ hasExistingData, onApply, onClose }: Props) {
               </div>
 
               {/* Tips in plain language */}
-              <div style={{ background: "var(--cream2)", border: "1px solid var(--cream3)", borderRadius: 4, padding: "12px 14px" }}>
+              <div style={{ background: "var(--cream2)", border: "1px solid var(--cream3)", borderRadius: 2, padding: "12px 14px" }}>
                 <div style={{ fontSize: 10, letterSpacing: ".12em", textTransform: "uppercase", color: "var(--gold)", marginBottom: 8, fontWeight: 600 }}>
                   Tips for the best result
                 </div>
@@ -336,7 +336,7 @@ export function PdfImport({ hasExistingData, onApply, onClose }: Props) {
               </div>
 
               {/* Extracted fields summary */}
-              <div style={{ display: "grid", gap: 8, fontSize: 12, color: "var(--ink3)", background: "var(--cream2)", border: "1px solid var(--cream3)", borderRadius: 4, padding: 12 }}>
+              <div style={{ display: "grid", gap: 8, fontSize: 12, color: "var(--ink3)", background: "var(--cream2)", border: "1px solid var(--cream3)", borderRadius: 2, padding: 12 }}>
                 <Field label="Series / Category" value={patch.series} />
                 <Field label="Name" value={patch.name} />
                 <Field label="Description" value={patch.description} clamp />
@@ -356,14 +356,14 @@ export function PdfImport({ hasExistingData, onApply, onClose }: Props) {
                       const on = selected.has(i);
                       const isPhoto = p.kind === "embedded";
                       return (
-                        <button key={`${p.page}-${p.kind}-${i}`} onClick={() => toggle(i)} style={{ position: "relative", width: 84, height: 110, borderRadius: 4, overflow: "hidden", border: `2px solid ${on ? "var(--gold)" : "var(--cream3)"}`, padding: 0, cursor: "pointer", background: "var(--cream2)" }} aria-pressed={on}>
+                        <button key={`${p.page}-${p.kind}-${i}`} onClick={() => toggle(i)} style={{ position: "relative", width: 84, height: 110, borderRadius: 2, overflow: "hidden", border: `2px solid ${on ? "var(--gold)" : "var(--cream3)"}`, padding: 0, cursor: "pointer", background: "var(--cream2)" }} aria-pressed={on}>
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img src={p.dataUrl} alt={isPhoto ? `Photo from page ${p.page}` : `Page ${p.page}`} style={{ width: "100%", height: "100%", objectFit: "cover", opacity: on ? 1 : 0.45 }} />
                           <span style={{ position: "absolute", bottom: 3, left: 3, fontSize: 8, letterSpacing: ".06em", textTransform: "uppercase", padding: "1px 5px", borderRadius: 2, color: "#fff", background: isPhoto ? "rgba(46,125,50,.92)" : "rgba(26,24,20,.78)" }}>
                             {isPhoto ? "Photo" : `Page ${p.page}`}
                           </span>
                           {on && (
-                            <span style={{ position: "absolute", top: 3, right: 3, width: 18, height: 18, borderRadius: 3, background: "var(--gold)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                            <span style={{ position: "absolute", top: 3, right: 3, width: 18, height: 18, borderRadius: 2, background: "var(--gold)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center" }}>
                               <Check size={12} strokeWidth={3} />
                             </span>
                           )}
@@ -375,7 +375,7 @@ export function PdfImport({ hasExistingData, onApply, onClose }: Props) {
               )}
 
               {renderFailed && (
-                <div style={{ fontSize: 11, color: "var(--ink4)", background: "var(--cream2)", border: "1px solid var(--cream3)", borderRadius: 4, padding: "8px 10px" }}>
+                <div style={{ fontSize: 11, color: "var(--ink4)", background: "var(--cream2)", border: "1px solid var(--cream3)", borderRadius: 2, padding: "8px 10px" }}>
                   We couldn&apos;t find any pictures in this PDF — you can add product photos yourself after.
                 </div>
               )}
@@ -421,21 +421,21 @@ Also keep a copy of this PDF on the product (under Documents)
 
 const btnGold: React.CSSProperties = {
   background: "var(--gold)", border: "none", color: "white", padding: "9px 18px", fontSize: 11,
-  cursor: "pointer", fontFamily: "'Jost', sans-serif", borderRadius: 3, fontWeight: 600,
+  cursor: "pointer", fontFamily: "'Jost', sans-serif", borderRadius: 2, fontWeight: 600,
   letterSpacing: ".06em", display: "inline-flex", alignItems: "center", gap: 7,
 };
 const btnGhost: React.CSSProperties = {
   background: "none", border: "1px solid var(--cream3)", color: "var(--ink3)", padding: "9px 16px",
-  fontSize: 11, cursor: "pointer", fontFamily: "'Jost', sans-serif", borderRadius: 3,
+  fontSize: 11, cursor: "pointer", fontFamily: "'Jost', sans-serif", borderRadius: 2,
 };
 
 function Bar({ value }: { value?: number }) {
   // Indeterminate when value is undefined.
   return (
-    <div style={{ height: 6, borderRadius: 4, background: "var(--cream3)", overflow: "hidden", maxWidth: 340, margin: "0 auto" }}>
+    <div style={{ height: 6, borderRadius: 2, background: "var(--cream3)", overflow: "hidden", maxWidth: 340, margin: "0 auto" }}>
       <div
         style={{
-          height: "100%", background: "var(--gold)", borderRadius: 4,
+          height: "100%", background: "var(--gold)", borderRadius: 2,
           width: value === undefined ? "40%" : `${value}%`,
           animation: value === undefined ? "indet 1.1s ease-in-out infinite" : undefined,
           transition: value === undefined ? undefined : "width .2s",

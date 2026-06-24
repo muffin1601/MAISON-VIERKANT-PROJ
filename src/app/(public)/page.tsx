@@ -150,7 +150,7 @@ export default async function HomePage() {
       {/* TRADE BLOCKS */}
       <div className="sw">
         <div className="r-grid-2" style={{ gap: 28 }}>
-          <div style={{ background: "var(--cream2)", padding: 40, borderRadius: 4 }}>
+          <div style={{ background: "var(--cream2)", padding: 40, borderRadius: 2 }}>
             <div className="ey">Trade</div>
             <h3
               style={{
@@ -178,7 +178,7 @@ export default async function HomePage() {
               Open Trade Account →
             </Link>
           </div>
-          <div style={{ background: "var(--ink)", padding: 40, borderRadius: 4 }}>
+          <div style={{ background: "var(--ink)", padding: 40, borderRadius: 2 }}>
             <div className="ey" style={{ color: "var(--gold2)" }}>
               Trade
             </div>

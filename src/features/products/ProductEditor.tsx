@@ -249,7 +249,7 @@ export function ProductEditor({
       onClick={onClose}
     >
       <div
-        style={{ maxWidth: 800, margin: "0 auto", background: "var(--white)", borderRadius: 6, overflow: "hidden", boxShadow: "0 24px 80px rgba(0,0,0,.5)" }}
+        style={{ maxWidth: 800, margin: "0 auto", background: "var(--white)", borderRadius: 2, overflow: "hidden", boxShadow: "0 24px 80px rgba(0,0,0,.5)" }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -271,7 +271,7 @@ export function ProductEditor({
         {(
           <div style={{ padding: 22, display: "grid", gap: 18 }}>
             {/* AI import — populate the form from a product PDF */}
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap", background: "var(--cream2)", border: "1px solid var(--cream3)", borderRadius: 4, padding: "10px 14px" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap", background: "var(--cream2)", border: "1px solid var(--cream3)", borderRadius: 2, padding: "10px 14px" }}>
               <div style={{ fontSize: 11, color: "var(--ink4)", lineHeight: 1.6 }}>
                 Have a catalogue page or spec sheet with clear, selectable text? Auto-fill name,
                 series, description, dimensions, models and finishes — and pick product images.
@@ -323,7 +323,7 @@ export function ProductEditor({
               <div style={{ display: "flex", gap: 12, alignItems: "flex-start", flexWrap: "wrap" }}>
                 <div
                   onClick={() => heroFile.current?.click()}
-                  style={{ width: 120, height: 90, background: "var(--cream2)", border: "2px dashed var(--cream3)", borderRadius: 4, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, color: "var(--ink4)", cursor: "pointer", flexShrink: 0, overflow: "hidden", position: "relative" }}
+                  style={{ width: 120, height: 90, background: "var(--cream2)", border: "2px dashed var(--cream3)", borderRadius: 2, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, color: "var(--ink4)", cursor: "pointer", flexShrink: 0, overflow: "hidden", position: "relative" }}
                 >
                   {heroImg ? (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -367,7 +367,7 @@ export function ProductEditor({
             {/* 3 · Models */}
             <div>
               <label className="a-label">3 · Models / Sizes with EUR Price</label>
-              <div style={{ border: "1px solid var(--cream3)", borderRadius: 4, overflow: "hidden", marginBottom: 8 }}>
+              <div style={{ border: "1px solid var(--cream3)", borderRadius: 2, overflow: "hidden", marginBottom: 8 }}>
                 <table style={{ width: "100%", borderCollapse: "collapse" }}>
                   <thead>
                     <tr style={{ background: "var(--ink)" }}>
@@ -482,17 +482,17 @@ export function ProductEditor({
             {/* Save row */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid var(--cream3)", paddingTop: 14, gap: 10 }}>
               {product ? (
-                <button onClick={remove} disabled={saving} style={{ background: "none", border: "1px solid var(--danger)", color: "var(--danger)", padding: "9px 18px", fontSize: 11, cursor: "pointer", fontFamily: "'Jost', sans-serif", borderRadius: 3, display: "inline-flex", alignItems: "center", gap: 7 }}>
+                <button onClick={remove} disabled={saving} style={{ background: "none", border: "1px solid var(--danger)", color: "var(--danger)", padding: "9px 18px", fontSize: 11, cursor: "pointer", fontFamily: "'Jost', sans-serif", borderRadius: 2, display: "inline-flex", alignItems: "center", gap: 7 }}>
                   <Trash2 size={14} strokeWidth={1.5} /> Delete Product
                 </button>
               ) : (
                 <span />
               )}
               <div style={{ display: "flex", gap: 10 }}>
-                <button onClick={onClose} style={{ background: "none", border: "1px solid var(--cream3)", color: "var(--ink3)", padding: "9px 18px", fontSize: 11, cursor: "pointer", fontFamily: "'Jost', sans-serif", borderRadius: 3 }}>
+                <button onClick={onClose} style={{ background: "none", border: "1px solid var(--cream3)", color: "var(--ink3)", padding: "9px 18px", fontSize: 11, cursor: "pointer", fontFamily: "'Jost', sans-serif", borderRadius: 2 }}>
                   Cancel
                 </button>
-                <button onClick={save} disabled={saving || uploading} style={{ background: "var(--gold)", border: "none", color: "white", padding: "9px 22px", fontSize: 11, cursor: "pointer", fontFamily: "'Jost', sans-serif", borderRadius: 3, fontWeight: 600, letterSpacing: ".06em", opacity: saving || uploading ? 0.6 : 1, display: "inline-flex", alignItems: "center", gap: 7 }}>
+                <button onClick={save} disabled={saving || uploading} style={{ background: "var(--gold)", border: "none", color: "white", padding: "9px 22px", fontSize: 11, cursor: "pointer", fontFamily: "'Jost', sans-serif", borderRadius: 2, fontWeight: 600, letterSpacing: ".06em", opacity: saving || uploading ? 0.6 : 1, display: "inline-flex", alignItems: "center", gap: 7 }}>
                   {saving ? "Saving…" : "Save & Update Website"}
                   {!saving && <ArrowRight size={14} strokeWidth={1.5} />}
                 </button>
@@ -531,7 +531,7 @@ function fmtSize(bytes: number | null): string {
 
 function DocRow({ doc, onRemove }: { doc: DocItem; onRemove: () => void }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 10px", background: "var(--cream2)", border: "1px solid var(--cream3)", borderRadius: 4 }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 10px", background: "var(--cream2)", border: "1px solid var(--cream3)", borderRadius: 2 }}>
       <FileText size={18} strokeWidth={1.5} style={{ color: "var(--gold)", flexShrink: 0 }} />
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 12, color: "var(--ink)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{doc.filename}</div>
@@ -551,10 +551,10 @@ function DocRow({ doc, onRemove }: { doc: DocItem; onRemove: () => void }) {
 
 function Thumb({ url, onRemove }: { url: string; onRemove: () => void }) {
   return (
-    <div style={{ position: "relative", width: 72, height: 72, borderRadius: 4, overflow: "hidden", border: "1px solid var(--cream3)" }}>
+    <div style={{ position: "relative", width: 72, height: 72, borderRadius: 2, overflow: "hidden", border: "1px solid var(--cream3)" }}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-      <button onClick={onRemove} aria-label="Remove" style={{ position: "absolute", top: 2, right: 2, width: 18, height: 18, borderRadius: 3, border: "none", cursor: "pointer", color: "#fff", background: "rgba(139,44,44,.9)", display: "inline-flex", alignItems: "center", justifyContent: "center" }}><X size={12} strokeWidth={2} /></button>
+      <button onClick={onRemove} aria-label="Remove" style={{ position: "absolute", top: 2, right: 2, width: 18, height: 18, borderRadius: 2, border: "none", cursor: "pointer", color: "#fff", background: "rgba(139,44,44,.9)", display: "inline-flex", alignItems: "center", justifyContent: "center" }}><X size={12} strokeWidth={2} /></button>
     </div>
   );
 }
@@ -563,7 +563,7 @@ function DrawingChip({ url, onRemove }: { url: string; onRemove: () => void }) {
   const isPdf = /\.pdf($|\?)/i.test(url);
   const fname = decodeURIComponent(url.split("/").pop()?.split("?")[0] ?? "file").slice(0, 22);
   return (
-    <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 6, padding: "6px 26px 6px 8px", background: "var(--cream2)", border: "1px solid var(--cream3)", borderRadius: 4, fontSize: 10, color: "var(--ink3)" }}>
+    <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 6, padding: "6px 26px 6px 8px", background: "var(--cream2)", border: "1px solid var(--cream3)", borderRadius: 2, fontSize: 10, color: "var(--ink3)" }}>
       {isPdf ? (
         <FileText size={18} strokeWidth={1.5} style={{ color: "var(--gold)" }} />
       ) : (
@@ -571,7 +571,7 @@ function DrawingChip({ url, onRemove }: { url: string; onRemove: () => void }) {
         <img src={url} alt="" style={{ width: 28, height: 28, objectFit: "cover", borderRadius: 2 }} />
       )}
       <a href={url} target="_blank" rel="noreferrer" style={{ color: "var(--ink3)", textDecoration: "none" }}>{fname}</a>
-      <button onClick={onRemove} aria-label="Remove" style={{ position: "absolute", top: 2, right: 2, width: 18, height: 18, borderRadius: 3, border: "none", cursor: "pointer", color: "#fff", background: "rgba(139,44,44,.9)", display: "inline-flex", alignItems: "center", justifyContent: "center" }}><X size={12} strokeWidth={2} /></button>
+      <button onClick={onRemove} aria-label="Remove" style={{ position: "absolute", top: 2, right: 2, width: 18, height: 18, borderRadius: 2, border: "none", cursor: "pointer", color: "#fff", background: "rgba(139,44,44,.9)", display: "inline-flex", alignItems: "center", justifyContent: "center" }}><X size={12} strokeWidth={2} /></button>
     </div>
   );
 }

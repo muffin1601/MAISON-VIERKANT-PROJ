@@ -31,7 +31,7 @@ export function OrderStatusSelect({
           letterSpacing: ".06em",
           color: meta.color,
           border: `1px solid ${meta.color}`,
-          borderRadius: 20,
+          borderRadius: 2,
           padding: "3px 10px",
           background: "#fff",
           whiteSpace: "nowrap",
@@ -75,7 +75,7 @@ export function OrderStatusSelect({
       style={{
         border: `1px solid ${meta.color}`,
         color: meta.color,
-        borderRadius: 20,
+        borderRadius: 2,
         padding: "4px 10px",
         fontSize: 11,
         background: "#fff",

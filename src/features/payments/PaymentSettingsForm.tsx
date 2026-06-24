@@ -84,7 +84,7 @@ export function PaymentSettingsForm({ initial }: { initial: PaymentSettings }) {
               <img
                 src={form.upiQrUrl}
                 alt="UPI QR"
-                style={{ width: 90, height: 90, objectFit: "contain", border: "1px solid var(--cream3)", borderRadius: 6 }}
+                style={{ width: 90, height: 90, objectFit: "contain", border: "1px solid var(--cream3)", borderRadius: 2 }}
               />
             ) : (
               <div style={{ fontSize: 11, color: "var(--ink4)" }}>No QR uploaded</div>
@@ -127,7 +127,7 @@ const lbl: React.CSSProperties = {
 };
 const inp: React.CSSProperties = {
   border: "1px solid var(--cream3)",
-  borderRadius: 4,
+  borderRadius: 2,
   padding: "9px 11px",
   fontSize: 13,
   fontFamily: "'Jost', sans-serif",

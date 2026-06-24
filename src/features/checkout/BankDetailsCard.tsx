@@ -38,7 +38,7 @@ export function BankDetailsCard({
       style={{
         background: "var(--cream2)",
         border: "1px solid var(--cream3)",
-        borderRadius: 6,
+        borderRadius: 2,
         padding: "16px 18px",
         marginTop: 8,
       }}
@@ -88,7 +88,7 @@ export function BankDetailsCard({
                         color: "var(--gold)",
                         background: "none",
                         border: "1px solid var(--cream3)",
-                        borderRadius: 4,
+                        borderRadius: 2,
                         padding: "3px 8px",
                         cursor: "pointer",
                       }}
@@ -113,7 +113,7 @@ export function BankDetailsCard({
                       color: "var(--gold)",
                       background: "none",
                       border: "1px solid var(--cream3)",
-                      borderRadius: 4,
+                      borderRadius: 2,
                       padding: "3px 8px",
                       cursor: "pointer",
                     }}
@@ -132,7 +132,7 @@ export function BankDetailsCard({
               <img
                 src={settings.upiQrUrl}
                 alt="UPI QR code"
-                style={{ width: 160, height: 160, objectFit: "contain", border: "1px solid var(--cream3)", borderRadius: 6, background: "#fff" }}
+                style={{ width: 160, height: 160, objectFit: "contain", border: "1px solid var(--cream3)", borderRadius: 2, background: "#fff" }}
               />
             </div>
           )}

@@ -196,7 +196,7 @@ function IconAction({ children, title, onClick }: { children: React.ReactNode; t
       title={title}
       aria-label={title}
       onClick={onClick}
-      style={{ background: "none", border: "1px solid var(--cream3)", borderRadius: 4, width: 28, height: 28, display: "inline-flex", alignItems: "center", justifyContent: "center", color: "var(--ink3)", cursor: "pointer" }}
+      style={{ background: "none", border: "1px solid var(--cream3)", borderRadius: 2, width: 28, height: 28, display: "inline-flex", alignItems: "center", justifyContent: "center", color: "var(--ink3)", cursor: "pointer" }}
     >
       {children}
     </button>
@@ -214,7 +214,7 @@ function PreviewModal({
 }) {
   return (
     <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(26,24,20,.8)", zIndex: 900, overflowY: "auto", padding: "24px 16px" }}>
-      <div onClick={(e) => e.stopPropagation()} style={{ maxWidth: 680, margin: "0 auto", background: "var(--white)", borderRadius: 6, overflow: "hidden", boxShadow: "0 24px 80px rgba(0,0,0,.5)" }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ maxWidth: 680, margin: "0 auto", background: "var(--white)", borderRadius: 2, overflow: "hidden", boxShadow: "0 24px 80px rgba(0,0,0,.5)" }}>
         <div style={{ background: "var(--ink)", padding: "16px 22px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div>
             <div style={{ color: "var(--cream)", fontSize: 13, fontWeight: 600, letterSpacing: ".06em" }}>Quote {quote.number}</div>
@@ -263,7 +263,7 @@ function PreviewModal({
               </label>
             ) : <span />}
             <div style={{ display: "flex", gap: 10 }}>
-              <button onClick={onDownload} style={{ background: "var(--gold)", border: "none", color: "#fff", padding: "9px 18px", fontSize: 11, cursor: "pointer", fontFamily: "'Jost', sans-serif", borderRadius: 3, fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 7 }}>
+              <button onClick={onDownload} style={{ background: "var(--gold)", border: "none", color: "#fff", padding: "9px 18px", fontSize: 11, cursor: "pointer", fontFamily: "'Jost', sans-serif", borderRadius: 2, fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 7 }}>
                 <Download size={14} strokeWidth={1.5} /> Download PDF
               </button>
             </div>

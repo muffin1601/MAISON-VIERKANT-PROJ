@@ -80,7 +80,7 @@ export function CustomersView({ customers }: { customers: CustomerRow[] }) {
           marginBottom: 16,
           padding: "12px 16px",
           background: "var(--cream2)",
-          borderRadius: 4,
+          borderRadius: 2,
           border: "1px solid var(--cream3)",
         }}
       >

@@ -122,7 +122,7 @@ export function PaymentQueue({ rows, canWrite }: { rows: PaymentRow[]; canWrite:
                       fontSize: 10,
                       color: c,
                       border: `1px solid ${c}`,
-                      borderRadius: 20,
+                      borderRadius: 2,
                       padding: "2px 8px",
                       whiteSpace: "nowrap",
                     }}
@@ -169,7 +169,7 @@ function btn(color: string): React.CSSProperties {
     color: "#fff",
     background: color,
     border: "none",
-    borderRadius: 4,
+    borderRadius: 2,
     padding: "5px 10px",
     cursor: "pointer",
   };

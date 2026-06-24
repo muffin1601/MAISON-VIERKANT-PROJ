@@ -295,7 +295,7 @@ export function ProductDetail({
                       href={`/api/catalogue/${doc.id}`}
                       target="_blank"
                       rel="noreferrer"
-                      style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", background: "var(--cream2)", border: "1px solid var(--cream3)", borderRadius: 4, textDecoration: "none", color: "var(--ink)" }}
+                      style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", background: "var(--cream2)", border: "1px solid var(--cream3)", borderRadius: 2, textDecoration: "none", color: "var(--ink)" }}
                     >
                       <FileText size={18} strokeWidth={1.5} style={{ color: "var(--gold)", flexShrink: 0 }} />
                       <span style={{ flex: 1, fontSize: 13 }}>{doc.filename}</span>
@@ -308,7 +308,7 @@ export function ProductDetail({
                       href={url}
                       target="_blank"
                       rel="noreferrer"
-                      style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", background: "var(--cream2)", border: "1px solid var(--cream3)", borderRadius: 4, textDecoration: "none", color: "var(--ink)" }}
+                      style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", background: "var(--cream2)", border: "1px solid var(--cream3)", borderRadius: 2, textDecoration: "none", color: "var(--ink)" }}
                     >
                       <FileText size={18} strokeWidth={1.5} style={{ color: "var(--gold)", flexShrink: 0 }} />
                       <span style={{ flex: 1, fontSize: 13 }}>Technical drawing {i + 1}</span>

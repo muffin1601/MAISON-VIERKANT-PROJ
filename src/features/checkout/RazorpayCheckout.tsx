@@ -84,7 +84,7 @@ export function RazorpayPayButton({
             background: "#fbeaea",
             border: "1px solid #e3b6b6",
             color: "var(--danger)",
-            borderRadius: 3,
+            borderRadius: 2,
             padding: "10px 13px",
             fontSize: 12,
             lineHeight: 1.6,

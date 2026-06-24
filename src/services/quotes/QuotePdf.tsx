@@ -85,7 +85,7 @@ const s = StyleSheet.create({
   grandLabel: { fontSize: 11, fontFamily: "Helvetica-Bold", color: INK },
   grandValue: { fontSize: 13, fontFamily: "Helvetica-Bold", color: GOLD },
 
-  terms: { marginTop: 28, padding: 14, backgroundColor: CREAM2, borderRadius: 3 },
+  terms: { marginTop: 28, padding: 14, backgroundColor: CREAM2, borderRadius: 2 },
   termsTitle: { fontSize: 8, letterSpacing: 1.5, color: GOLD, marginBottom: 6, fontFamily: "Helvetica-Bold", textTransform: "uppercase" },
   termLine: { fontSize: 7.5, color: INK3, marginBottom: 3, lineHeight: 1.5 },
 
