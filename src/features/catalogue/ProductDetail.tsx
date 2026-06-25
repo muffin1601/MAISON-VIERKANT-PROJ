@@ -186,6 +186,7 @@ export function ProductDetail({
                           </td>
                           <td>
                             <button
+                              type="button"
                               className="mt-sel-btn"
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -210,7 +211,9 @@ export function ProductDetail({
               {p.finishes.map((f) => (
                 <button
                   key={f}
+                  type="button"
                   className={`fin-btn${selFin === f ? " active" : ""}`}
+                  aria-pressed={selFin === f}
                   onClick={() => setSelFin(f)}
                 >
                   {f}
@@ -235,7 +238,7 @@ export function ProductDetail({
             </div>
             <div className="qty-row">
               <div className="qty-ctrl">
-                <button aria-label="Decrease quantity" onClick={() => setQty((q) => Math.max(1, q - 1))}>
+                <button type="button" aria-label="Decrease quantity" disabled={qty <= 1} onClick={() => setQty((q) => Math.max(1, q - 1))}>
                   −
                 </button>
                 <input
@@ -251,7 +254,7 @@ export function ProductDetail({
                     setQty(Number.isNaN(n) ? 1 : Math.min(99, Math.max(1, n)));
                   }}
                 />
-                <button aria-label="Increase quantity" onClick={() => setQty((q) => Math.min(99, q + 1))}>
+                <button type="button" aria-label="Increase quantity" disabled={qty >= 99} onClick={() => setQty((q) => Math.min(99, q + 1))}>
                   +
                 </button>
               </div>

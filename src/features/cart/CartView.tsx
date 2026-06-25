@@ -97,7 +97,9 @@ export function CartView({ priceMap }: { priceMap: PriceMap }) {
                   </div>
                   <div className="qty-ctrl">
                     <button
+                      type="button"
                       aria-label={`Decrease quantity of ${label}`}
+                      disabled={i.qty <= 1}
                       onClick={() => setQty(i.id, i.finish, i.code, Math.max(1, i.qty - 1))}
                     >
                       &#8722;
@@ -106,17 +108,19 @@ export function CartView({ priceMap }: { priceMap: PriceMap }) {
                       {i.qty}
                     </span>
                     <button
+                      type="button"
                       aria-label={`Increase quantity of ${label}`}
+                      disabled={i.qty >= 999}
                       onClick={() => setQty(i.id, i.finish, i.code, Math.min(999, i.qty + 1))}
                     >
                       +
                     </button>
                   </div>
                   <div className="ci-actions">
-                    <button className="ci-link" onClick={() => saveForLater(i.id, i.finish, i.code)}>
+                    <button type="button" className="ci-link" onClick={() => saveForLater(i.id, i.finish, i.code)}>
                       Save for later
                     </button>
-                    <button className="ci-link" onClick={() => remove(i.id, i.finish, i.code)}>
+                    <button type="button" className="ci-link" onClick={() => remove(i.id, i.finish, i.code)}>
                       Remove
                     </button>
                   </div>
@@ -184,10 +188,10 @@ export function CartView({ priceMap }: { priceMap: PriceMap }) {
                     <div className="saved-price">{info.unit ? fmt(info.unit) : "On request"}</div>
                   </div>
                   <div className="ci-actions">
-                    <button className="ci-link" onClick={() => moveToCart(i.id, i.finish, i.code)}>
+                    <button type="button" className="ci-link" onClick={() => moveToCart(i.id, i.finish, i.code)}>
                       Move to cart
                     </button>
-                    <button className="ci-link" onClick={() => removeSaved(i.id, i.finish, i.code)}>
+                    <button type="button" className="ci-link" onClick={() => removeSaved(i.id, i.finish, i.code)}>
                       Remove
                     </button>
                   </div>

@@ -666,8 +666,8 @@ function PaymentStep({
 
       {/* Notes */}
       <div className="co-field" style={{ marginTop: 18 }}>
-        <label>Notes / Special Requirements</label>
-        <textarea rows={2} placeholder="Special instructions, project name, installation notes…" value={notes} onChange={(e) => setNotes(e.target.value)} style={{ border: "1px solid var(--cream3)", borderRadius: 2, padding: 11, fontSize: 12, fontFamily: "'Jost', sans-serif", color: "var(--ink)", resize: "vertical" }} />
+        <label htmlFor="co-notes">Notes / Special Requirements</label>
+        <textarea id="co-notes" rows={2} placeholder="Special instructions, project name, installation notes…" value={notes} onChange={(e) => setNotes(e.target.value)} style={{ border: "1px solid var(--cream3)", borderRadius: 2, padding: 11, fontSize: 12, fontFamily: "'Jost', sans-serif", color: "var(--ink)", resize: "vertical" }} />
       </div>
 
       {/* Method-specific panel */}
