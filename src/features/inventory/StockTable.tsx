@@ -35,6 +35,10 @@ export function StockTable({ rows, canEdit }: { rows: StockRow[]; canEdit: boole
 
   const color = (v: number) => (v === 0 ? "#8b2c2c" : v <= 2 ? "#6b4a1a" : "#2c5c2c");
 
+  if (rows.length === 0) {
+    return <div style={{ fontSize: 13, color: "var(--ink4)", padding: "24px 0" }}>No stock items to display.</div>;
+  }
+
   return (
     <table className="a-table" id="stock-table">
       <thead>
@@ -64,9 +68,18 @@ export function StockTable({ rows, canEdit }: { rows: StockRow[]; canEdit: boole
               {canEdit && (
                 <td>
                   <div className="stock-ctrl">
-                    <button onClick={() => adjust(p.id, -1)}>−</button>
+                    <button
+                      type="button"
+                      aria-label={`Decrease stock for ${p.name}`}
+                      disabled={v <= 0}
+                      onClick={() => adjust(p.id, -1)}
+                    >
+                      −
+                    </button>
                     <span style={{ minWidth: 24, textAlign: "center", fontSize: 13 }}>{v}</span>
-                    <button onClick={() => adjust(p.id, 1)}>+</button>
+                    <button type="button" aria-label={`Increase stock for ${p.name}`} onClick={() => adjust(p.id, 1)}>
+                      +
+                    </button>
                   </div>
                 </td>
               )}

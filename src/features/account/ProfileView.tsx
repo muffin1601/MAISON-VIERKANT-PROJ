@@ -123,12 +123,13 @@ export function ProfileView() {
         <div className="co-section-title">Edit profile</div>
         <div className="co-2col">
           <div className="co-field">
-            <label>Full name</label>
-            <input value={nameVal} autoComplete="name" onChange={(e) => setName(e.target.value)} />
+            <label htmlFor="prof-name">Full name</label>
+            <input id="prof-name" value={nameVal} autoComplete="name" onChange={(e) => setName(e.target.value)} />
           </div>
           <div className="co-field">
-            <label>Phone</label>
+            <label htmlFor="prof-phone">Phone</label>
             <input
+              id="prof-phone"
               value={phoneVal}
               inputMode="numeric"
               maxLength={10}
@@ -138,8 +139,8 @@ export function ProfileView() {
           </div>
         </div>
         <div className="co-field">
-          <label>Email</label>
-          <input value={profile.email} disabled title="Contact support to change your email" />
+          <label htmlFor="prof-email">Email</label>
+          <input id="prof-email" value={profile.email} disabled title="Contact support to change your email" />
         </div>
         <button
           className="btn-primary"
@@ -156,12 +157,12 @@ export function ProfileView() {
         <div className="co-section-title">Change password</div>
         <div className="co-2col">
           <div className="co-field">
-            <label>Current password</label>
-            <input type="password" value={cur} autoComplete="current-password" onChange={(e) => setCur(e.target.value)} />
+            <label htmlFor="prof-cur-pw">Current password</label>
+            <input id="prof-cur-pw" type="password" value={cur} autoComplete="current-password" onChange={(e) => setCur(e.target.value)} />
           </div>
           <div className="co-field">
-            <label>New password</label>
-            <input type="password" value={next} autoComplete="new-password" onChange={(e) => setNext(e.target.value)} />
+            <label htmlFor="prof-new-pw">New password</label>
+            <input id="prof-new-pw" type="password" value={next} autoComplete="new-password" onChange={(e) => setNext(e.target.value)} />
           </div>
         </div>
         <p className="prof-hint">At least 8 characters with an uppercase letter, a lowercase letter and a number.</p>

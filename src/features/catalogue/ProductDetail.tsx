@@ -10,6 +10,7 @@ import { useUI } from "@/store/ui";
 import { showToast } from "@/lib/toast";
 import { FileText, Download } from "@/components/ui/icons";
 import { ProductGallery } from "@/features/catalogue/ProductGallery";
+import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
 import { WishlistButton } from "@/features/catalogue/WishlistButton";
 import { ProductCardLite } from "@/features/catalogue/ProductCardLite";
 import { RecentlyViewed } from "@/features/catalogue/RecentlyViewed";
@@ -66,6 +67,14 @@ export function ProductDetail({
   return (
     <div id="page-product" className="page active">
       <div className="sw">
+        <Breadcrumbs
+          items={[
+            { label: "Home", href: "/" },
+            { label: "Collection", href: "/collection" },
+            { label: p.series, href: `/collection?series=${encodeURIComponent(p.series)}` },
+            { label: p.name },
+          ]}
+        />
         <div
           style={{
             display: "flex",

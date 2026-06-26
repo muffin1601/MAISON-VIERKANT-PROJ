@@ -50,13 +50,19 @@ export function CollectionBrowser({
   const [page, setPage] = useState(1);
   const [drawer, setDrawer] = useState(false);
 
-  // Lock body scroll while the mobile filter drawer is open.
+  // Lock body scroll + close on Escape while the mobile filter drawer is open
+  // (matches the header drawer and gallery lightbox behaviour).
   useEffect(() => {
     if (!drawer) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setDrawer(false);
+    };
+    document.addEventListener("keydown", onKey);
     return () => {
       document.body.style.overflow = prev;
+      document.removeEventListener("keydown", onKey);
     };
   }, [drawer]);
 

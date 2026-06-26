@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
@@ -258,10 +258,12 @@ function AField({
   value: string;
   onChange: (v: string) => void;
 } & Omit<React.InputHTMLAttributes<HTMLInputElement>, "value" | "onChange">) {
+  const autoId = useId();
+  const id = rest.id ?? autoId;
   return (
     <div className="co-field" style={{ marginBottom: 14 }}>
-      <label>{label}</label>
-      <input {...rest} value={value} onChange={(e) => onChange(e.target.value)} />
+      <label htmlFor={id}>{label}</label>
+      <input {...rest} id={id} value={value} onChange={(e) => onChange(e.target.value)} />
     </div>
   );
 }

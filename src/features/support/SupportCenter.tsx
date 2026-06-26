@@ -114,33 +114,33 @@ export function SupportCenter({
       <div className="sc-form">
         <div className="co-2col">
           <div className="co-field">
-            <label>Name *</label>
-            <input value={form.name} onChange={(e) => set({ name: e.target.value })} autoComplete="name" />
+            <label htmlFor="sc-name">Name *</label>
+            <input id="sc-name" value={form.name} onChange={(e) => set({ name: e.target.value })} autoComplete="name" />
           </div>
           <div className="co-field">
-            <label>Email *</label>
-            <input value={form.email} onChange={(e) => set({ email: e.target.value })} autoComplete="email" />
+            <label htmlFor="sc-email">Email *</label>
+            <input id="sc-email" value={form.email} onChange={(e) => set({ email: e.target.value })} autoComplete="email" />
           </div>
         </div>
         <div className="co-2col">
           <div className="co-field">
-            <label>Phone</label>
-            <input value={form.phone} onChange={(e) => set({ phone: e.target.value })} inputMode="tel" autoComplete="tel" />
+            <label htmlFor="sc-phone">Phone</label>
+            <input id="sc-phone" value={form.phone} onChange={(e) => set({ phone: e.target.value })} inputMode="tel" autoComplete="tel" />
           </div>
           {needsOrder && (
             <div className="co-field">
-              <label>Order number *</label>
-              <input value={form.orderNumber} onChange={(e) => set({ orderNumber: e.target.value })} placeholder="MVI-ORD-…" />
+              <label htmlFor="sc-order">Order number *</label>
+              <input id="sc-order" value={form.orderNumber} onChange={(e) => set({ orderNumber: e.target.value })} placeholder="MVI-ORD-…" />
             </div>
           )}
         </div>
         <div className="co-field">
-          <label>Subject *</label>
-          <input value={form.subject} onChange={(e) => set({ subject: e.target.value })} />
+          <label htmlFor="sc-subject">Subject *</label>
+          <input id="sc-subject" value={form.subject} onChange={(e) => set({ subject: e.target.value })} />
         </div>
         <div className="co-field">
-          <label>How can we help? *</label>
-          <textarea rows={5} value={form.message} onChange={(e) => set({ message: e.target.value })} />
+          <label htmlFor="sc-message">How can we help? *</label>
+          <textarea id="sc-message" rows={5} value={form.message} onChange={(e) => set({ message: e.target.value })} />
         </div>
         <button className="btn-primary" style={{ padding: "12px 28px" }} disabled={busy} onClick={submit}>
           {busy ? "Submitting…" : "Submit request"}

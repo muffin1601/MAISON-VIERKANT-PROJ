@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getProducts, getActivePricing, cardPrice, cardMinINR } from "@/services/catalogue/catalogue";
 import { CollectionBrowser, type CardData } from "@/features/catalogue/CollectionBrowser";
+import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
 
 export const metadata: Metadata = {
   title: "The Collection",
@@ -62,6 +63,13 @@ export default async function CollectionPage({
         </div>
       </div>
       <div className="sw" style={{ paddingTop: 44 }}>
+        <Breadcrumbs
+          items={[
+            { label: "Home", href: "/" },
+            { label: "Collection", ...(series ? { href: "/collection" } : {}) },
+            ...(series ? [{ label: series }] : []),
+          ]}
+        />
         <CollectionBrowser items={items} initialSeries={series} />
       </div>
     </div>

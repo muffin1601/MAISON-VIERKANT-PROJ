@@ -143,6 +143,48 @@ summary:focus-visible {
 }
 
 /* ==========================================================================
+   BREADCRUMBS — small uppercase Jost trail (matches the prototype's eyebrow
+   lettering). Current page is non-interactive; links underline on hover.
+   ========================================================================== */
+.crumbs {
+  margin-bottom: 22px;
+}
+.crumbs ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 0;
+  font-family: var(--font-jost), "Jost", sans-serif;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.crumbs li {
+  display: inline-flex;
+  align-items: center;
+}
+.crumbs a {
+  color: var(--ink3);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+.crumbs a:hover {
+  color: var(--gold);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.crumbs [aria-current="page"] {
+  color: var(--ink);
+}
+.crumbs-sep {
+  color: var(--cream3);
+  margin: 0 9px;
+}
+
+/* ==========================================================================
    REDUCED MOTION — honour user OS preference (WCAG 2.3.3 / best practice)
    prototype.css uses scroll-behavior:smooth and many hover transforms with no
    guard. Collapse animation for users who ask for it.

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { cloneElement, isValidElement, useId, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { showToast } from "@/lib/toast";
 import type { AddressDto } from "@/services/account/addresses";
@@ -255,10 +255,14 @@ export function AddressBookView() {
 }
 
 function L({ label, children }: { label: string; children: React.ReactNode }) {
+  // Associate the label with the field for click-to-focus + screen readers.
+  const autoId = useId();
+  const child = isValidElement<{ id?: string }>(children) ? children : null;
+  const id = child?.props.id ?? autoId;
   return (
     <div className="co-field">
-      <label>{label}</label>
-      {children}
+      <label htmlFor={id}>{label}</label>
+      {child ? cloneElement(child, { id }) : children}
     </div>
   );
 }
