@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 
 export default function ShippingPage() {
   return (
-    <LegalPage title="Shipping & Delivery" updated="TODO — set on launch">
+    <LegalPage title="Shipping & Delivery">
       {/* TODO: replace placeholder copy with reviewed legal text before launch. */}
       <p>
         We deliver handcrafted vessels across India with care appropriate to their value and

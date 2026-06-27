@@ -8,11 +8,9 @@ import type { ReactNode } from "react";
  */
 export function LegalPage({
   title,
-  updated,
   children,
 }: {
   title: string;
-  updated: string;
   children: ReactNode;
 }) {
   return (
@@ -20,7 +18,6 @@ export function LegalPage({
       <div className="legal-inner">
         <p className="legal-eyebrow">Maison Vierkant India</p>
         <h1 className="ab-h">{title}</h1>
-        <p className="legal-updated">Last updated: {updated}</p>
         <div className="legal-body">{children}</div>
       </div>
     </section>

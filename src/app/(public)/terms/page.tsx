@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 
 export default function TermsPage() {
   return (
-    <LegalPage title="Terms & Conditions" updated="TODO — set on launch">
+    <LegalPage title="Terms & Conditions">
       {/* TODO: replace placeholder copy with reviewed legal text before launch. */}
       <p>
         These terms govern your use of this website and any order placed with Maison Vierkant

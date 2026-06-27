@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 
 export default function ReturnsPage() {
   return (
-    <LegalPage title="Returns & Cancellations" updated="TODO — set on launch">
+    <LegalPage title="Returns & Cancellations">
       {/* TODO: replace placeholder copy with reviewed legal text before launch. */}
       <p>
         Because our pieces are handcrafted to order, our returns policy differs from mass-market

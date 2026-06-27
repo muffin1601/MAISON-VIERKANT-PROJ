@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 
 export default function PrivacyPage() {
   return (
-    <LegalPage title="Privacy Policy" updated="TODO — set on launch">
+    <LegalPage title="Privacy Policy">
       {/* TODO: replace placeholder copy with reviewed legal text before launch. */}
       <p>
         This Privacy Policy explains how Maison Vierkant India (Watcon Pvt. Ltd.) collects,
