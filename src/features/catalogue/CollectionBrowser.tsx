@@ -18,8 +18,7 @@ const SORTS: { value: Sort; label: string }[] = [
 ];
 
 const PRICE_BANDS: { key: string; label: string; test: (n: number | null) => boolean }[] = [
-  { key: "u50", label: "Under ₹50,000", test: (n) => n !== null && n < 50000 },
-  { key: "50-100", label: "₹50,000 – ₹1,00,000", test: (n) => n !== null && n >= 50000 && n < 100000 },
+  { key: "u100", label: "Under ₹1,00,000", test: (n) => n !== null && n < 100000 },
   { key: "100-200", label: "₹1,00,000 – ₹2,00,000", test: (n) => n !== null && n >= 100000 && n < 200000 },
   { key: "200+", label: "₹2,00,000 +", test: (n) => n !== null && n >= 200000 },
   { key: "request", label: "Price on request", test: (n) => n === null },
