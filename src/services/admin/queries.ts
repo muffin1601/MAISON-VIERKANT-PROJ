@@ -1,8 +1,10 @@
 /** Admin read queries (server-only). DB-backed via Prisma. */
 import { prisma } from "@/lib/prisma";
+import { logger } from "@/lib/logger";
 import { DEFAULT_PRICING, type PricingConfig } from "@/services/pricing/PricingService";
 import { getActivePricing } from "@/services/catalogue/catalogue";
 import { getPaymentStats } from "@/services/admin/paymentQueries";
+import type { LeadRow } from "@/features/leads/LeadsView";
 
 export interface DashStat {
   label: string;
@@ -41,19 +43,50 @@ export async function getDashboard() {
   return { stats, recent, pricing };
 }
 
-export async function getLeads() {
-  const leads = await prisma.lead.findMany({ orderBy: { createdAt: "desc" } });
-  return leads.map((l) => ({
-    id: l.id,
-    date: l.createdAt.toISOString().slice(0, 10),
-    name: l.name,
-    email: l.email ?? "—",
-    phone: l.phone ?? "—",
-    type: l.type ?? l.source,
-    company: l.company ?? "—",
-    source: l.source,
-    status: l.status,
-  }));
+export interface LeadsResult {
+  leads: LeadRow[];
+  /** True when the underlying query failed and `leads` is an empty fallback. */
+  failed: boolean;
+}
+
+/**
+ * Catalogue & contact leads for the admin console.
+ *
+ * Never throws: a DB/connection/Prisma failure is logged with full context and
+ * degraded to an empty result with `failed: true`, so the admin page renders a
+ * friendly banner instead of crashing into the error boundary.
+ */
+export async function getLeads(): Promise<LeadsResult> {
+  try {
+    const leads = await prisma.lead.findMany({ orderBy: { createdAt: "desc" } });
+    const rows: LeadRow[] = leads.map((l) => ({
+      id: l.id,
+      date: l.createdAt.toISOString().slice(0, 10),
+      name: l.name,
+      email: l.email ?? "—",
+      phone: l.phone ?? "—",
+      type: l.type ?? l.source,
+      company: l.company ?? "—",
+      source: l.source,
+      status: l.status,
+    }));
+    return { leads: rows, failed: false };
+  } catch (err) {
+    const e = err as { code?: string; message?: string; stack?: string };
+    logger.error(
+      {
+        page: "/admin/leads",
+        fn: "getLeads",
+        query: "prisma.lead.findMany",
+        prismaCode: e?.code ?? null,
+        message: e?.message ?? String(err),
+        stack: e?.stack ?? null,
+        at: new Date().toISOString(),
+      },
+      "Failed to load catalogue leads",
+    );
+    return { leads: [], failed: true };
+  }
 }
 
 /**

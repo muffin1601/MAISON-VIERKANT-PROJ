@@ -19,7 +19,16 @@ export interface LeadRow {
 const SOURCES = ["CATALOGUE", "CONTACT", "TRADE"];
 
 /** Admin leads: search + status/source filters + CSV export + inline status update. */
-export function LeadsView({ leads, canWrite }: { leads: LeadRow[]; canWrite: boolean }) {
+export function LeadsView({
+  leads,
+  canWrite,
+  loadFailed = false,
+}: {
+  leads: LeadRow[];
+  canWrite: boolean;
+  /** Set when the server query failed; shows a non-blocking error banner. */
+  loadFailed?: boolean;
+}) {
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("ALL");
   const [source, setSource] = useState("ALL");
@@ -64,6 +73,33 @@ export function LeadsView({ leads, canWrite }: { leads: LeadRow[]; canWrite: boo
 
   return (
     <>
+      {loadFailed && (
+        <div
+          role="alert"
+          className="a-card"
+          style={{
+            marginBottom: 16,
+            borderLeft: "3px solid var(--gold)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 12,
+            flexWrap: "wrap",
+          }}
+        >
+          <span style={{ fontSize: 13, color: "var(--ink2)" }}>
+            Unable to load catalogue leads right now. Please try again later.
+          </span>
+          <button
+            type="button"
+            className="a-btn-g"
+            style={{ width: "auto", padding: "8px 16px", margin: 0 }}
+            onClick={() => window.location.reload()}
+          >
+            Retry
+          </button>
+        </div>
+      )}
       <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginBottom: 16 }}>
         <input
           className="a-input"

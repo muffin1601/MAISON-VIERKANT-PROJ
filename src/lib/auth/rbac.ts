@@ -59,15 +59,16 @@ export const ADMIN_NAV: AdminNavItem[] = [
   { href: "/admin/purchase-orders", label: "Purchase Order", permission: "purchase.read" },
 ];
 
-export function hasPermission(granted: string[], required: Permission): boolean {
-  return granted.includes(required);
+export function hasPermission(granted: string[] | null | undefined, required: Permission): boolean {
+  return Array.isArray(granted) && granted.includes(required);
 }
 
-export function hasAnyPermission(granted: string[], required: Permission[]): boolean {
-  return required.some((p) => granted.includes(p));
+export function hasAnyPermission(granted: string[] | null | undefined, required: Permission[]): boolean {
+  return Array.isArray(granted) && required.some((p) => granted.includes(p));
 }
 
 /** Filter the admin nav to what a user with these permissions may see. */
-export function allowedNav(granted: string[]): AdminNavItem[] {
+export function allowedNav(granted: string[] | null | undefined): AdminNavItem[] {
+  if (!Array.isArray(granted)) return [];
   return ADMIN_NAV.filter((item) => granted.includes(item.permission));
 }
