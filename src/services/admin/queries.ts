@@ -1,6 +1,6 @@
 /** Admin read queries (server-only). DB-backed via Prisma. */
 import { prisma } from "@/lib/prisma";
-import { calcINR, DEFAULT_PRICING, type PricingConfig } from "@/services/pricing/PricingService";
+import { DEFAULT_PRICING, type PricingConfig } from "@/services/pricing/PricingService";
 import { getActivePricing } from "@/services/catalogue/catalogue";
 import { getPaymentStats } from "@/services/admin/paymentQueries";
 
@@ -12,16 +12,13 @@ export interface DashStat {
 
 export async function getDashboard() {
   const pricing = await getActivePricing();
-  // Aggregate in the DB instead of pulling every order/inventory row into memory.
-  const [productCount, active, recentOrders, inventories, payStats] = await Promise.all([
+  // Aggregate in the DB instead of pulling every order row into memory.
+  const [productCount, active, recentOrders, payStats] = await Promise.all([
     prisma.product.count(),
     prisma.order.count({ where: { status: { not: "DELIVERED" } } }),
     prisma.order.findMany({ include: { customer: true }, orderBy: { createdAt: "desc" }, take: 6 }),
-    prisma.inventory.findMany({ include: { product: true } }),
     getPaymentStats(),
   ]);
-
-  const low = inventories.filter((i) => i.quantity <= i.lowStockThreshold);
 
   const stats: DashStat[] = [
     { label: "Revenue Received", value: inr(payStats.revenueReceived), sub: "Verified advances" },
@@ -31,7 +28,6 @@ export async function getDashboard() {
     { label: "Ready to Dispatch", value: String(payStats.readyToDispatch), sub: "Awaiting shipment" },
     { label: "Active Orders", value: String(active), sub: "Not delivered" },
     { label: "Series", value: String(productCount), sub: "In catalogue" },
-    { label: "Low Stock", value: String(low.length), sub: "≤2 units" },
   ];
 
   const recent = recentOrders.map((o) => ({
@@ -42,13 +38,7 @@ export async function getDashboard() {
     status: String(o.status ?? "").toLowerCase(),
   }));
 
-  const lowStock = low.map((i) => ({
-    id: i.product?.code ?? i.id,
-    name: i.product?.name ?? "—",
-    qty: i.quantity,
-  }));
-
-  return { stats, recent, lowStock, pricing };
+  return { stats, recent, pricing };
 }
 
 export async function getLeads() {
@@ -107,24 +97,6 @@ export async function getOrders() {
     trackingNumber: o.trackingNumber ?? "",
     courier: o.courier ?? "",
     trackingUrl: o.trackingUrl ?? "",
-  }));
-}
-
-export async function getStockRows() {
-  const pricing = await getActivePricing();
-  const products = await prisma.product.findMany({
-    include: { category: true, variants: true, inventory: true },
-    orderBy: { name: "asc" },
-  });
-  return products.map((p) => ({
-    id: p.id,
-    series: p.category?.name ?? "",
-    name: p.name,
-    sizes: p.variants.map((v) => v.code).join(", "),
-    dims: p.dimsSummary ?? "",
-    eur: Number(p.eurPrice),
-    inr: calcINR(Number(p.eurPrice), pricing),
-    stock: p.inventory?.quantity ?? 0,
   }));
 }
 

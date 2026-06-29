@@ -258,7 +258,7 @@ export interface FinalizedOrder {
  * Create the permanent Order from a session — the ONLY place an Order is born.
  * Idempotent: if the session already produced an order, returns it untouched.
  *
- *  - paid=true  → Razorpay path: creates a CAPTURED Payment, decrements stock,
+ *  - paid=true  → Razorpay path: creates a CAPTURED Payment,
  *                 order status PAID (PAYMENT_VERIFIED), invoice + confirmation email.
  *  - paid=false → bank-transfer path: order status PENDING_PAYMENT, instructions email.
  */
@@ -346,32 +346,6 @@ export async function finalizeSessionToOrder(
         },
       });
 
-  // Stock decrement ops (paid path only, stocked items only — made-to-order skipped).
-  const inventoryOps: Prisma.PrismaPromise<unknown>[] = [];
-  if (opts.paid) {
-    const products = await prisma.product.findMany({
-      where: { id: { in: priced.orderItems.map((i) => i.productId) } },
-      include: { inventory: true },
-    });
-    const invByProduct = new Map(products.map((p) => [p.id, p.inventory]));
-    for (const it of priced.orderItems) {
-      const inv = invByProduct.get(it.productId);
-      if (!inv || inv.quantity < it.qty) continue;
-      inventoryOps.push(
-        prisma.inventory.update({ where: { id: inv.id }, data: { quantity: { decrement: it.qty } } }),
-        prisma.inventoryTransaction.create({
-          data: {
-            inventoryId: inv.id,
-            delta: -it.qty,
-            reason: "SALE",
-            balanceAfter: inv.quantity - it.qty,
-            note: `Order ${session.orderNumber} — advance paid`,
-          },
-        }),
-      );
-    }
-  }
-
   const status = opts.paid ? PaymentOrderStatus.PAID : PaymentOrderStatus.PENDING_PAYMENT;
 
   let orderId = "";
@@ -410,7 +384,6 @@ export async function finalizeSessionToOrder(
             : {}),
         },
       }),
-      ...inventoryOps,
     ]);
     const created = await prisma.order.findUnique({ where: { number: session.orderNumber }, select: { id: true } });
     orderId = created!.id;

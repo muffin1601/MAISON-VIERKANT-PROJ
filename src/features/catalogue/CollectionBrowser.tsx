@@ -44,7 +44,6 @@ export function CollectionBrowser({
   );
   const [finishes, setFinishes] = useState<string[]>([]);
   const [bands, setBands] = useState<string[]>([]);
-  const [inStock, setInStock] = useState(false);
   const [sort, setSort] = useState<Sort>("featured");
   const [page, setPage] = useState(1);
   const [drawer, setDrawer] = useState(false);
@@ -72,7 +71,6 @@ export function CollectionBrowser({
     const out = items.filter((p) => {
       if (series.length && !series.includes(p.series)) return false;
       if (finishes.length && !p.finishes.some((f) => finishes.includes(f))) return false;
-      if (inStock && p.soldOut) return false;
       if (bands.length) {
         const ok = PRICE_BANDS.filter((b) => bands.includes(b.key)).some((b) => b.test(p.minINR));
         if (!ok) return false;
@@ -105,19 +103,18 @@ export function CollectionBrowser({
         out.sort((a, b) => Number(b.featured) - Number(a.featured));
     }
     return out;
-  }, [items, series, finishes, bands, inStock, sort]);
+  }, [items, series, finishes, bands, sort]);
 
   // Reset paging when the result set changes.
-  useEffect(() => setPage(1), [series, finishes, bands, inStock, sort]);
+  useEffect(() => setPage(1), [series, finishes, bands, sort]);
 
   const visible = filtered.slice(0, page * PAGE);
-  const activeCount = series.length + finishes.length + bands.length + (inStock ? 1 : 0);
+  const activeCount = series.length + finishes.length + bands.length;
 
   const clearAll = () => {
     setSeries([]);
     setFinishes([]);
     setBands([]);
-    setInStock(false);
   };
 
   const facets = (
@@ -150,13 +147,6 @@ export function CollectionBrowser({
             <span>{b.label}</span>
           </label>
         ))}
-      </fieldset>
-      <fieldset className="facet">
-        <legend>Availability</legend>
-        <label className="facet-opt">
-          <input type="checkbox" checked={inStock} onChange={() => setInStock((v) => !v)} />
-          <span>In stock only</span>
-        </label>
       </fieldset>
       {activeCount > 0 && (
         <button type="button" className="btn-ghost facet-clear" onClick={clearAll}>

@@ -33,7 +33,6 @@ export const productSchema = z.object({
   documents: z.array(documentSchema).optional().default([]),
   finishes: z.array(z.string()).optional().default([]),
   models: z.array(modelSchema).optional().default([]),
-  stock: z.number().int().nonnegative().optional().default(0),
 });
 
 export type ProductInput = z.infer<typeof productSchema>;

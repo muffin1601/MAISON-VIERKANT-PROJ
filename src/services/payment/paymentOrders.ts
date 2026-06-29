@@ -26,7 +26,7 @@ export function loadOrderForPayment(orderId: string) {
     where: { id: orderId },
     include: {
       customer: true,
-      items: { include: { product: { include: { variants: true, inventory: true } }, variant: true } },
+      items: { include: { product: { include: { variants: true } }, variant: true } },
       payments: true,
     },
   });
@@ -42,7 +42,7 @@ export interface CartValidationResult {
 /**
  * Re-validate an order immediately before charging. The frontend can never alter
  * the payable amount — it is recomputed here from the stored order. Aborts if a
- * product was archived, went out of stock, or its price drifted since checkout.
+ * product was archived or its price drifted since checkout.
  */
 export async function validateOrderPayable(order: OrderForPayment): Promise<CartValidationResult> {
   const advanceInr = Math.round(Number(order.totalInr) * 0.5);
@@ -70,14 +70,6 @@ export async function validateOrderPayable(order: OrderForPayment): Promise<Cart
         advanceInr,
         reason: `Pricing for “${product.name}” has changed. Please review your order again.`,
       };
-    }
-
-    // Inventory (best-effort): block only when the item is actively stocked AND
-    // short. Made-to-order items (no inventory record / untracked) always pass —
-    // production starts after the advance, so zero on-hand is expected.
-    const inv = product.inventory;
-    if (inv && inv.quantity > 0 && inv.quantity < it.qty) {
-      return { ok: false, advanceInr, reason: `Insufficient stock for “${product.name}”.` };
     }
   }
 
@@ -119,31 +111,6 @@ export async function markPaymentCaptured(params: {
     return { ok: true, alreadyPaid: true };
   }
 
-  // Build inventory-decrement ops for STOCKED items (made-to-order items, which
-  // carry no inventory row or zero on-hand, are skipped — production starts after
-  // the advance, so zero stock is expected and must not block/oversell).
-  const itemsWithStock = await prisma.orderItem.findMany({
-    where: { orderId: params.orderId },
-    include: { product: { include: { inventory: true } } },
-  });
-  const inventoryOps = itemsWithStock.flatMap((it) => {
-    const inv = it.product?.inventory;
-    if (!inv || inv.quantity < it.qty) return [];
-    const balanceAfter = inv.quantity - it.qty;
-    return [
-      prisma.inventory.update({ where: { id: inv.id }, data: { quantity: { decrement: it.qty } } }),
-      prisma.inventoryTransaction.create({
-        data: {
-          inventoryId: inv.id,
-          delta: -it.qty,
-          reason: "SALE",
-          balanceAfter,
-          note: `Order ${existing.order.number} — advance paid`,
-        },
-      }),
-    ];
-  });
-
   const paidAt = new Date();
   await prisma.$transaction([
     prisma.payment.update({
@@ -163,8 +130,6 @@ export async function markPaymentCaptured(params: {
       where: { id: params.orderId, status: { in: PAYABLE_ORDER_STATUSES } },
       data: { status: PaymentOrderStatus.PAID },
     }),
-    // Decrement stock atomically with the capture (only for genuinely stocked items).
-    ...inventoryOps,
   ]);
 
   await ensureInvoice(params.orderId);

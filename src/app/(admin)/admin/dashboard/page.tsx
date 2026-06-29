@@ -19,7 +19,7 @@ export default async function DashboardPage() {
     );
   }
 
-  const [{ stats, recent, lowStock }, metrics] = await Promise.all([getDashboard(), getCommerceMetrics()]);
+  const [{ stats, recent }, metrics] = await Promise.all([getDashboard(), getCommerceMetrics()]);
 
   return (
     <div className="a-page active">
@@ -102,35 +102,6 @@ export default async function DashboardPage() {
               ))}
             </tbody>
           </table>
-        </div>
-
-        <div className="a-card">
-          <div className="a-sec">Low Stock Alert</div>
-          <div id="dash-stock">
-            {lowStock.length === 0 ? (
-              <div style={{ fontSize: 12, color: "var(--ink4)" }}>All series well stocked.</div>
-            ) : (
-              lowStock.map((s) => (
-                <div
-                  key={s.id}
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    padding: "7px 0",
-                    borderBottom: "1px solid var(--cream3)",
-                    fontSize: 12,
-                  }}
-                >
-                  <span>{s.name}</span>
-                  <span
-                    style={{ color: s.qty === 0 ? "#8b2c2c" : "#6b4a1a", fontWeight: 400 }}
-                  >
-                    {s.qty} units
-                  </span>
-                </div>
-              ))
-            )}
-          </div>
         </div>
       </div>
     </div>

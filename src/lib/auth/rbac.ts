@@ -47,7 +47,6 @@ export const ADMIN_NAV: AdminNavItem[] = [
   { href: "/admin/dashboard", label: "Dashboard", permission: "dashboard.read" },
   { href: "/admin/pricing", label: "Pricing Engine", permission: "pricing.read" },
   { href: "/admin/products", label: "Products", permission: "products.read" },
-  { href: "/admin/stock", label: "Stock", permission: "inventory.read" },
   { href: "/admin/orders", label: "Orders", permission: "orders.read" },
   { href: "/admin/payments", label: "Payments", permission: "payments.read" },
   { href: "/admin/coupons", label: "Coupons", permission: "pricing.read" },

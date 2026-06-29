@@ -214,7 +214,6 @@ export function ProductEditor({
         documents,
         finishes,
         models: models.filter((m) => m.code.trim()),
-        stock: 0,
       });
       showToast(product ? "Product updated." : "Product created.");
       onClose();

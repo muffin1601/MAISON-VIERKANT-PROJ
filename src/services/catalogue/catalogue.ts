@@ -69,7 +69,6 @@ interface ProtoProduct {
   dims?: string;
   finishes: string[];
   eurPrice: number;
-  stock?: number;
   imgs: string[];
 }
 interface ProtoProj {

@@ -108,7 +108,6 @@ export async function saveProduct(input: ProductInput): Promise<{ id: string }> 
       documents: { create: docs },
       finishes: { create: fins.map((fid) => ({ finishId: fid, tier: "STD" })) },
       variants: { create: d.models.map((m) => ({ code: m.code, eurPrice: m.eur, dims: m.dims })) },
-      inventory: { create: { quantity: d.stock, lowStockThreshold: 2 } },
     },
   });
   await recordAudit({ actorId: user.id, action: "product.create", entity: "Product", entityId: product.id, after: { code: product.code, name: d.name } });

@@ -14,10 +14,10 @@ describe("RBAC", () => {
     expect(labels).toEqual(["Support & Returns", "Catalogue Leads", "Customers", "Create Quote", "Saved Quotes"]);
   });
 
-  it("inventory manager cannot see orders or pricing-manage pages", () => {
-    const perms = ["inventory.read", "products.read", "dashboard.read"];
+  it("products-scoped role cannot see orders or pricing-manage pages", () => {
+    const perms = ["products.read", "dashboard.read"];
     const labels = allowedNav(perms).map((n) => n.label);
-    expect(labels).toContain("Stock");
+    expect(labels).toContain("Products");
     expect(labels).toContain("Dashboard");
     expect(labels).not.toContain("Orders");
   });
