@@ -3,16 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { withPermission } from "@/lib/auth/session";
-
-export const LEAD_STATUSES = [
-  "NEW",
-  "CONTACTED",
-  "QUALIFIED",
-  "WON",
-  "LOST",
-] as const;
-
-export type LeadStatus = (typeof LEAD_STATUSES)[number];
+import { LEAD_STATUSES, type LeadStatus } from "./constants";
 
 /** Admin lead-status update. Requires `leads.write`. */
 export const updateLeadStatus = withPermission(

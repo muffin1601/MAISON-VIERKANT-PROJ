@@ -2,7 +2,8 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { showToast } from "@/lib/toast";
-import { updateLeadStatus, LEAD_STATUSES, type LeadStatus } from "./actions";
+import { updateLeadStatus } from "./actions";
+import { LEAD_STATUSES, type LeadStatus } from "./constants";
 
 export interface LeadRow {
   id: string;

@@ -24,8 +24,15 @@ const GALLERY = [
 
 export default async function HomePage() {
   const [products, pricing] = await Promise.all([getProducts(), getActivePricing()]);
-  // Featured = series containing "Collection" (prototype renderHome filter).
-  const featured = products.filter((p) => p.series.includes("Collection"));
+  // Featured = products explicitly flagged `featured` in the admin Product editor.
+  // Fallback: if none are flagged yet, surface the first active products so the
+  // homepage section is never empty.
+  const active = products.filter((p) => p.status === "ACTIVE");
+  // Flagged products first, then top up with other active products so the grid
+  // always fills (8 tiles) even before much is flagged in the admin.
+  const flagged = active.filter((p) => p.featured);
+  const rest = active.filter((p) => !p.featured);
+  const featured = [...flagged, ...rest].slice(0, 8);
 
   return (
     <div id="page-home" className="page active">
