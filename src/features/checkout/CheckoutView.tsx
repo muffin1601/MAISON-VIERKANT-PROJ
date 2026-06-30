@@ -803,7 +803,7 @@ function SuccessScreen({ placed, settings }: { placed: PlacedState; settings: Pa
             <Link className="btn-ghost" href="/collection" style={{ padding: "13px 28px" }}>Continue shopping</Link>
           </div>
           <p style={{ fontSize: 11, color: "var(--ink4)", lineHeight: 1.8, maxWidth: 460, margin: "22px auto 0", textAlign: "center" }}>
-            Use your order number as the payment reference. Questions? Email <a href="mailto:report@watcon.net" style={{ color: "var(--gold)" }}>report@watcon.net</a>. Once verified, production begins.
+            Use your order number as the payment reference. Questions? Email <a href="mailto:maison@watcon.net" style={{ color: "var(--gold)" }}>maison@watcon.net</a>. Once verified, production begins.
           </p>
         </>
       )}

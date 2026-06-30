@@ -96,7 +96,7 @@ export async function answer(message: string, userId: string | null): Promise<As
   return {
     intent: "FALLBACK",
     reply:
-      "I'm not sure about that one. I can help you track an order, browse products, or reach our support team. You can also message us on WhatsApp or at hello@maisonvierkant.in.",
+      "I'm not sure about that one. I can help you track an order, browse products, or reach our support team. You can also message us on WhatsApp or at maison@watcon.net.",
     links: [{ label: "Browse the collection", href: "/collection" }],
     suggestions: FALLBACK_CHIPS,
   };
@@ -139,7 +139,7 @@ async function dispatch(intent: Intent, message: string, userId: string | null):
       return {
         intent,
         reply:
-          "Our team is happy to help. Email hello@maisonvierkant.in, call +91 7669469620, or tap WhatsApp (bottom-right). You can also raise a ticket and we'll reply within 24 hours.",
+          "Our team is happy to help. Email maison@watcon.net, call +91 7669469620, or tap WhatsApp (bottom-right). You can also raise a ticket and we'll reply within 24 hours.",
         links: [
           { label: "Contact us", href: "/contact" },
           { label: "Raise a support ticket", href: "/account/support" },

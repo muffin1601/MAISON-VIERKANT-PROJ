@@ -636,7 +636,7 @@ footer{background:var(--ink);color:var(--cream2);padding:52px 40px 26px}
         </div>
         <div style="padding-top:4px">
           <div class="ci-item"><div class="ci-label">New Delhi Showroom</div><div class="ci-val">By Appointment<br>343 Sultanpur, MG Road<br>New Delhi 110030</div></div>
-          <div class="ci-item"><div class="ci-label">Email</div><div class="ci-val">hello@maisonvierkant.in</div></div>
+          <div class="ci-item"><div class="ci-label">Email</div><div class="ci-val">maison@watcon.net</div></div>
           <div class="ci-item"><div class="ci-label">Phone</div><div class="ci-val">+91-7669469620</div></div>
           <div class="ci-item"><div class="ci-label">Atelier Vierkant Belgium</div><div class="ci-val">Nijverheidslaan 28 · 8400 Ostend</div></div>
           <div class="ci-item" style="border:none"><div class="ci-label">Showroom Hours</div><div class="ci-val">Monday–Saturday: 10am–6pm<br>Sunday: By appointment only</div></div>
@@ -2258,7 +2258,7 @@ function dlSiteCSV(){
       });
     }
   });
-  csv+=`\nMaison Vierkant India · hello@maisonvierkant.in`;
+  csv+=`\nMaison Vierkant India · maison@watcon.net`;
   dlFile(`MaisonVierkant_PriceList_${d.replace(/\//g,'-')}.csv`,csv,'text/csv');
   showToast('Price list CSV exported — '+PRODUCTS.length+' series');
 }
@@ -3366,7 +3366,7 @@ function buildQuoteHTML(d) {
   return '<div style="text-align:center;padding-bottom:16px;margin-bottom:18px;border-bottom:3px solid #1a1814">'
     +'<div style="font-size:20px;font-weight:700;letter-spacing:.06em;color:#1a1814">MAISON VIERKANT <em style="color:#9a7a3a;font-style:italic">INDIA</em></div>'
     +'<div style="font-size:8.5px;letter-spacing:.22em;color:#9a7a3a;margin-top:3px;text-transform:uppercase">Curated by Watcon · Authorised Representative in India</div>'
-    +'<div style="font-size:9.5px;color:#a09890;margin-top:6px">hello@maisonvierkant.in · +91-7669469620 · 343 Sultanpur, MG Road, New Delhi 110030</div>'
+    +'<div style="font-size:9.5px;color:#a09890;margin-top:6px">maison@watcon.net · +91-7669469620 · 343 Sultanpur, MG Road, New Delhi 110030</div>'
     +'</div>'
     +'<div style="display:flex;justify-content:space-between;margin-bottom:22px;gap:20px;flex-wrap:wrap">'
       +'<div style="min-width:180px">'
@@ -3418,7 +3418,7 @@ function buildQuoteHTML(d) {
     +'</div>'
     +'<div style="display:flex;justify-content:space-between;margin-top:18px;padding-top:14px;border-top:2px solid #1a1814;flex-wrap:wrap;gap:12px">'
       +'<div><div style="font-weight:700;font-size:11px">MAISON VIERKANT INDIA</div>'
-        +'<div style="font-size:9px;color:#6b6660;line-height:1.8">Curated by Watcon Pvt. Ltd. · 343 Sultanpur, MG Road, New Delhi 110030<br>hello@maisonvierkant.in</div></div>'
+        +'<div style="font-size:9px;color:#6b6660;line-height:1.8">Curated by Watcon Pvt. Ltd. · 343 Sultanpur, MG Road, New Delhi 110030<br>maison@watcon.net</div></div>'
       +(d.prepName?'<div style="text-align:right"><div style="font-size:9px;color:#a09890">Prepared &amp; issued by</div><div style="font-weight:700;font-size:11px">'+d.prepName+'</div>'+(d.prepPhone?'<div style="font-size:9.5px;color:#6b6660">'+d.prepPhone+'</div>':'')+'</div>':'')
     +'</div>'
     +'<div style="text-align:center;margin-top:16px;font-size:8.5px;color:#a09890">Atelier Vierkant · Nijverheidslaan 28 · 8400 Ostend · Belgium · www.ateliervierkant.com</div>';
@@ -3795,7 +3795,7 @@ function previewPO(){
   <div style="display:flex;justify-content:space-between;margin-top:16px;padding-top:12px;border-top:2px solid #1a1814;flex-wrap:wrap;gap:10px">
     <div>
       <div style="font-weight:700;font-size:11px">MAISON VIERKANT INDIA</div>
-      <div style="font-size:9px;color:#6b6660">Curated by Watcon Pvt. Ltd. · 343 Sultanpur, MG Road, New Delhi 110030 · hello@maisonvierkant.in</div>
+      <div style="font-size:9px;color:#6b6660">Curated by Watcon Pvt. Ltd. · 343 Sultanpur, MG Road, New Delhi 110030 · maison@watcon.net</div>
     </div>
     ${d.prepName?`<div style="text-align:right">
       <div style="font-size:9px;color:#a09890">Authorised by</div>

@@ -44,7 +44,7 @@ export default function ContactPage() {
             </div>
             <div className="ci-item">
               <div className="ci-label">Email</div>
-              <div className="ci-val">hello@maisonvierkant.in</div>
+              <div className="ci-val">maison@watcon.net</div>
             </div>
             <div className="ci-item">
               <div className="ci-label">Phone</div>

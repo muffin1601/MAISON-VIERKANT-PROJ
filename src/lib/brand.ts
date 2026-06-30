@@ -2,7 +2,7 @@
 export const BRAND = {
   name: "Maison Vierkant",
   tagline: "CURATED BY WATCON",
-  email: "hello@maisonvierkant.in",
+  email: "maison@watcon.net",
   phone: "+91-7669469620",
   location: "By Appointment · New Delhi",
 } as const;

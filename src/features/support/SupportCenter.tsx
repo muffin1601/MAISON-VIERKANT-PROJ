@@ -15,7 +15,7 @@ const TABS: { key: TicketType; label: string }[] = [
 
 const WA = (process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "917669469620").replace(/\D/g, "");
 const PHONE = "+91 7669469620";
-const EMAIL = "hello@maisonvierkant.in";
+const EMAIL = "maison@watcon.net";
 
 /**
  * Self-service support center: pick a request type, fill a short form (posts to
