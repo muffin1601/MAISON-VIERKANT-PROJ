@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/session";
 import { recordAudit } from "@/lib/audit";
@@ -125,6 +125,8 @@ export async function applyPriceEntries(
     });
     revalidatePath("/admin/pricing");
     revalidatePath("/collection");
+    // Bulk price entries mutate ProductVariant.eurPrice → the catalogue cache is stale.
+    revalidateTag("catalogue");
   }
   return { updated, unmatched };
 }
@@ -150,5 +152,10 @@ export async function savePricing(config: PricingConfig): Promise<{ ok: boolean 
     await prisma.pricingRule.create({ data: { name: "Default", isActive: true, ...data } });
   }
   await recordAudit({ actorId: user.id, action: "pricing.update", entity: "PricingRule", entityId: active?.id ?? null, after: data });
+  // The active pricing rule changes every INR price site-wide — invalidate the cached
+  // pricing (and revalidate the storefront) so the new rates appear immediately.
+  revalidateTag("pricing");
+  revalidatePath("/collection");
+  revalidatePath("/admin/pricing");
   return { ok: true };
 }

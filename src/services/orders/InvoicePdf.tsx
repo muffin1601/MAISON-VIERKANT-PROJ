@@ -22,6 +22,7 @@ export interface InvoicePdfData {
   gstin: string;
   items: InvoicePdfItem[];
   subtotal: number;
+  packaging: number;
   gst: number;
   total: number;
   amountPaid: number;
@@ -163,7 +164,11 @@ export function InvoicePdf({ d }: { d: InvoicePdfData }) {
             <Text style={s.totalValue}>{rupee(d.subtotal)}</Text>
           </View>
           <View style={s.totalRow}>
-            <Text style={s.totalLabel}>GST</Text>
+            <Text style={s.totalLabel}>Packaging Charges</Text>
+            <Text style={s.totalValue}>{rupee(d.packaging)}</Text>
+          </View>
+          <View style={s.totalRow}>
+            <Text style={s.totalLabel}>GST (18%)</Text>
             <Text style={s.totalValue}>{rupee(d.gst)}</Text>
           </View>
           <View style={s.grandRow}>

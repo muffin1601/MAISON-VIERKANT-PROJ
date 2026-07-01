@@ -113,10 +113,10 @@ export function orderConfirmationEmail(opts: {
         `<p style="font-size:12px;color:#8c847a;margin:0 0 6px;">Order number</p>
          <p style="font-size:16px;color:${GOLD};margin:0 0 16px;font-weight:600;">${esc(number)}</p>` +
         itemsTable(items) +
-        `<table role="presentation" width="100%"><tr><td style="font-size:14px;">Total (incl. duty + GST)</td><td align="right" style="font-size:14px;font-weight:600;">${inr(totalInr)}</td></tr>
+        `<table role="presentation" width="100%"><tr><td style="font-size:14px;">Grand Total (incl. packaging &amp; GST)</td><td align="right" style="font-size:14px;font-weight:600;">${inr(totalInr)}</td></tr>
           <tr><td style="font-size:13px;color:#8c847a;padding-top:4px;">50% advance</td><td align="right" style="font-size:13px;color:#8c847a;padding-top:4px;">${inr(advanceInr)}</td></tr></table>` +
         (orderUrl ? `<p style="margin:22px 0 0;">${button(orderUrl, "View Order")}</p>` : "") +
-        p("<br/>All prices are ex-Delhi inclusive of import duty and GST. Transport outside Delhi is confirmed separately."),
+        p("<br/>All prices are ex-Delhi. Packaging and GST (18%) are added at checkout; transport outside Delhi is confirmed separately."),
     ),
   };
 }

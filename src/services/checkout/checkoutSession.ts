@@ -4,6 +4,7 @@ import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getActivePricing } from "@/services/catalogue/catalogue";
 import { calcBreakdown } from "@/services/pricing/PricingService";
+import { packagingInr as calcPackagingInr, gstOnSubtotal } from "@/services/pricing/charges";
 import { sendOfflineOrderCreated, sendOrderConfirmation } from "@/services/orders/notify";
 import { ensureInvoice } from "@/services/payment/paymentOrders";
 import { validateCoupon, recordRedemption } from "@/services/coupons/coupons";
@@ -57,9 +58,10 @@ interface PricedCart {
     unitPriceInr: number;
     pricingSnapshot: Prisma.InputJsonValue;
   }[];
-  subtotalInr: number; // ex-GST
-  gstInr: number;
-  totalInr: number;
+  subtotalInr: number; // ex-GST product total (Σ unit × qty)
+  packagingInr: number; // ₹30,000 × total quantity
+  gstInr: number; // 18% of subtotal
+  totalInr: number; // subtotal + packaging + gst
   advanceInr: number;
 }
 
@@ -109,14 +111,16 @@ async function priceCart(items: CheckoutItemInput[]): Promise<PricedCart> {
     })
     .filter((x): x is NonNullable<typeof x> => x !== null);
 
-  const totalInr = orderItems.reduce((s, it) => s + it.unitPriceInr * it.qty, 0);
-  const gstInr = orderItems.reduce(
-    (s, it) => s + (it.pricingSnapshot as { unitGst: number }).unitGst * it.qty,
-    0,
-  );
-  const subtotalInr = totalInr - gstInr;
+  // Order-summary model: displayed product prices are treated as GST-EXCLUSIVE, then
+  // packaging and GST (18%) are added on top. No duty line — import duty is already
+  // embedded in the landed product price by PricingService.
+  const subtotalInr = orderItems.reduce((s, it) => s + it.unitPriceInr * it.qty, 0);
+  const totalQty = orderItems.reduce((s, it) => s + it.qty, 0);
+  const packagingInr = calcPackagingInr(totalQty);
+  const gstInr = gstOnSubtotal(subtotalInr);
+  const totalInr = subtotalInr + packagingInr + gstInr;
   const advanceInr = Math.round(totalInr * 0.5);
-  return { orderItems, subtotalInr, gstInr, totalInr, advanceInr };
+  return { orderItems, subtotalInr, packagingInr, gstInr, totalInr, advanceInr };
 }
 
 function newOrderNumber(): string {
@@ -128,6 +132,7 @@ export interface CreatedSession {
   token: string;
   orderNumber: string;
   subtotalInr: number;
+  packagingInr: number;
   gstInr: number;
   shippingInr: number;
   discountInr: number;
@@ -201,6 +206,7 @@ export async function createCheckoutSession(input: {
     token,
     orderNumber,
     subtotalInr: priced.subtotalInr,
+    packagingInr: priced.packagingInr,
     gstInr: priced.gstInr,
     shippingInr: 0,
     discountInr,

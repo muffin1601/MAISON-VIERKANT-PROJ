@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/session";
 import { recordAudit } from "@/lib/audit";
+import { packagingInr, gstOnSubtotal } from "@/services/pricing/charges";
 import { quoteSchema, type QuoteInput } from "@/validations/quote";
 
 const QUOTE_STATUSES = ["DRAFT", "SENT", "APPROVED", "REJECTED", "EXPIRED", "CONVERTED"] as const;
@@ -16,9 +17,14 @@ export async function saveQuote(input: QuoteInput): Promise<{ id: string; number
   const user = await requirePermission("quotes.write");
   const d = quoteSchema.parse(input);
 
+  // Mirror the storefront checkout model: ex-GST prices + packaging (₹30,000 × qty) +
+  // GST (18% on the discounted subtotal). subtotalInr stays the gross, pre-discount base.
   const discount = d.discountPct / 100;
   const subtotal = d.lines.reduce((s, l) => s + l.unitInr * l.qty, 0);
-  const total = Math.round(subtotal * (1 - discount));
+  const netSubtotal = Math.round(subtotal * (1 - discount));
+  const packaging = packagingInr(d.lines.reduce((s, l) => s + l.qty, 0));
+  const gst = gstOnSubtotal(netSubtotal);
+  const total = netSubtotal + packaging + gst;
 
   // Upsert a customer record from the quote's billing details.
   const customer = await prisma.customer.create({

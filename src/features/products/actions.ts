@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/session";
 import { recordAudit } from "@/lib/audit";
@@ -95,6 +95,7 @@ export async function saveProduct(input: ProductInput): Promise<{ id: string }> 
     await recordAudit({ actorId: user.id, action: "product.update", entity: "Product", entityId: d.id, after: common });
     revalidatePath("/admin/products");
     revalidatePath("/collection");
+    revalidateTag("catalogue");
     return { id: d.id };
   }
 
@@ -113,6 +114,7 @@ export async function saveProduct(input: ProductInput): Promise<{ id: string }> 
   await recordAudit({ actorId: user.id, action: "product.create", entity: "Product", entityId: product.id, after: { code: product.code, name: d.name } });
   revalidatePath("/admin/products");
   revalidatePath("/collection");
+  revalidateTag("catalogue");
   return { id: product.id };
 }
 
@@ -124,5 +126,6 @@ export async function deleteProduct(id: string): Promise<{ ok: boolean }> {
   await recordAudit({ actorId: user.id, action: "product.delete", entity: "Product", entityId: id, before: existing });
   revalidatePath("/admin/products");
   revalidatePath("/collection");
+  revalidateTag("catalogue");
   return { ok: true };
 }

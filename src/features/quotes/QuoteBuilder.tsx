@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { ProductView } from "@/services/catalogue/catalogue";
 import { calcINR, type PricingConfig } from "@/services/pricing/PricingService";
+import { packagingInr, gstOnSubtotal } from "@/services/pricing/charges";
 import { fmt } from "@/lib/format";
 import { showToast } from "@/lib/toast";
 import { saveQuote } from "./actions";
@@ -57,9 +58,14 @@ export function QuoteBuilder({
     return calcINR(m ? m.eur : p.eurPrice, pricing);
   }
 
+  // Quote totals mirror the storefront checkout model: prices are GST-exclusive, then
+  // packaging (₹30,000 × qty) and GST (18% on the discounted subtotal) are added on top.
   const subtotal = lines.reduce((s, l) => s + unitFor(l) * l.qty, 0);
   const discAmt = Math.round(subtotal * (discount / 100));
-  const total = subtotal - discAmt;
+  const netSubtotal = subtotal - discAmt;
+  const packaging = packagingInr(lines.reduce((s, l) => s + l.qty, 0));
+  const gst = gstOnSubtotal(netSubtotal);
+  const total = netSubtotal + packaging + gst;
 
   const setLine = (i: number, patch: Partial<Line>) =>
     setLines((ls) => ls.map((l, idx) => (idx === i ? { ...l, ...patch } : l)));
@@ -112,8 +118,8 @@ export function QuoteBuilder({
       <h1>Maison Vierkant India</h1><div>Quotation for <strong>${cust.name}</strong>${cust.company ? " · " + cust.company : ""}</div>
       <div>${[cust.addr1, cust.city, cust.state, cust.pin].filter(Boolean).join(", ")}</div>
       <table><thead><tr><th>Item</th><th>Finish</th><th>Qty</th><th>Unit</th><th>Amount</th></tr></thead><tbody>${rows}</tbody></table>
-      <div class="tot">Subtotal: ${fmt(subtotal)}${discount > 0 ? `<br>Discount (${discount}%): −${fmt(discAmt)}` : ""}<br><strong>Total: ${fmt(total)}</strong></div>
-      <p style="margin-top:20px;font-size:10px;color:#888">Inclusive of import duty &amp; GST. Transport outside Delhi as actual. Lead time 10–14 weeks.</p>
+      <div class="tot">Subtotal: ${fmt(subtotal)}${discount > 0 ? `<br>Discount (${discount}%): −${fmt(discAmt)}` : ""}<br>Packaging Charges: ${fmt(packaging)}<br>GST (18%): ${fmt(gst)}<br><strong>Total: ${fmt(total)}</strong></div>
+      <p style="margin-top:20px;font-size:10px;color:#888">Prices are ex-GST; packaging and GST (18%) are shown separately above. Ex-Delhi — transport outside Delhi as actual. Lead time 10–14 weeks.</p>
       </body></html>`;
     const w = window.open("", "_blank");
     if (w) {
@@ -241,6 +247,14 @@ export function QuoteBuilder({
               <span>−{fmt(discAmt)}</span>
             </div>
           )}
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 4 }}>
+            <span>Packaging Charges</span>
+            <span>{fmt(packaging)}</span>
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 4 }}>
+            <span>GST (18%)</span>
+            <span>{fmt(gst)}</span>
+          </div>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid var(--cream3)", paddingTop: 8, marginTop: 8 }}>
             <span style={{ fontSize: 13 }}>Total</span>
             <span style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 22, fontWeight: 700 }}>{fmt(total)}</span>

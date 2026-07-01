@@ -6,6 +6,7 @@
  * transparently falls back to the bundled prototype data so the site renders IDENTICALLY.
  * Either way the shape returned is the same, and pricing always runs through PricingService.
  */
+import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { slugify } from "@/lib/format";
 import {
@@ -119,7 +120,18 @@ function fallbackProducts(): ProductView[] {
 }
 
 // ---- public API ----
-export async function getActivePricing(): Promise<PricingConfig> {
+//
+// PERF: the catalogue and pricing rule change only when an admin edits them, yet
+// every public page (home, collection, product) is `force-dynamic` and re-runs these
+// heavy Prisma queries (5 nested includes) on EVERY navigation — the dominant cause of
+// slow route changes. We wrap the DB reads in `unstable_cache` so navigations serve
+// cached data (no DB round-trip) while staying dynamic for per-user concerns. The cache
+// is invalidated on-demand via `revalidateTag("catalogue" | "pricing")` in the admin
+// product/pricing actions, so edits still appear immediately. Same shapes, same fallback.
+const CATALOGUE_TAG = "catalogue";
+const PRICING_TAG = "pricing";
+
+async function _getActivePricing(): Promise<PricingConfig> {
   try {
     const rule = await prisma.pricingRule.findFirst({ where: { isActive: true } });
     if (!rule) return DEFAULT_PRICING;
@@ -139,7 +151,7 @@ export async function getActivePricing(): Promise<PricingConfig> {
   }
 }
 
-export async function getProducts(): Promise<ProductView[]> {
+async function _getProducts(): Promise<ProductView[]> {
   try {
     const rows = await prisma.product.findMany({
       include: {
@@ -185,12 +197,7 @@ export async function getProducts(): Promise<ProductView[]> {
   }
 }
 
-export async function getProductBySlug(slug: string): Promise<ProductView | null> {
-  const all = await getProducts();
-  return all.find((p) => p.slug === slug) ?? null;
-}
-
-export async function getProjects(): Promise<ProjectView[]> {
+async function _getProjects(): Promise<ProjectView[]> {
   try {
     const rows = await prisma.project.findMany({ orderBy: { sort: "asc" } });
     if (rows.length)
@@ -209,6 +216,38 @@ export async function getProjects(): Promise<ProjectView[]> {
     summary: p.desc,
     imageUrl: p.img,
   }));
+}
+
+// Cached wrappers. `unstable_cache` dedups within a single render (so the product page's
+// getProductBySlug + getProducts collapse to ONE query) and serves subsequent navigations
+// from the Next data cache until the relevant tag is revalidated. A 1h safety `revalidate`
+// bounds staleness even if a tag is ever missed.
+const getProductsCached = unstable_cache(_getProducts, ["catalogue:products"], {
+  tags: [CATALOGUE_TAG],
+  revalidate: 3600,
+});
+const getActivePricingCached = unstable_cache(_getActivePricing, ["catalogue:pricing"], {
+  tags: [PRICING_TAG],
+  revalidate: 3600,
+});
+const getProjectsCached = unstable_cache(_getProjects, ["catalogue:projects"], {
+  tags: [CATALOGUE_TAG],
+  revalidate: 3600,
+});
+
+export function getProducts(): Promise<ProductView[]> {
+  return getProductsCached();
+}
+export function getActivePricing(): Promise<PricingConfig> {
+  return getActivePricingCached();
+}
+export function getProjects(): Promise<ProjectView[]> {
+  return getProjectsCached();
+}
+
+export async function getProductBySlug(slug: string): Promise<ProductView | null> {
+  const all = await getProducts();
+  return all.find((p) => p.slug === slug) ?? null;
 }
 
 /** Card price string, identical to prototype mkCard: "From ₹x" when multiple sizes. */

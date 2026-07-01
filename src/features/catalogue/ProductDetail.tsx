@@ -163,7 +163,7 @@ export function ProductDetail({
                       <tr>
                         <th>Model / Size</th>
                         <th>Dimensions &amp; Weight</th>
-                        <th className="right">Price (INR, incl. all taxes)</th>
+                        <th className="right">Price (INR, excl. GST)</th>
                         <th></th>
                       </tr>
                     </thead>
@@ -237,7 +237,7 @@ export function ProductDetail({
               {mods.length === 0
                 ? ""
                 : cm.eur > 0
-                  ? `${cm.code} · Inclusive of import duty, GST & delivery`
+                  ? `${cm.code} · Excl. GST — GST (18%) & packaging added at checkout`
                   : `${cm.code} — contact us for pricing`}
             </div>
             <div className="pd-del">

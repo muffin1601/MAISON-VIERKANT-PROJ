@@ -6,6 +6,7 @@ import { ShieldCheck, Lock, CreditCard, Landmark, Check } from "lucide-react";
 import { useCart } from "@/store/cart";
 import { useAddressBook } from "@/store/address";
 import { fmt } from "@/lib/format";
+import { packagingInr, gstOnSubtotal } from "@/services/pricing/charges";
 import { showToast } from "@/lib/toast";
 import type { PriceMap } from "@/features/cart/CartView";
 import type { PaymentSettings } from "@/services/settings/paymentSettings";
@@ -100,7 +101,16 @@ export function CheckoutView({
   const payFullRef = useRef(false);
 
   const unitOf = (id: string, code: string) => priceMap[`${id}|${code}`]?.unit ?? 0;
-  const clientTotal = items.reduce((s, i) => s + unitOf(i.id, i.code) * i.qty, 0);
+  // Client-side fallback breakdown, shown before the server session loads. Mirrors the
+  // server model exactly (see services/pricing/charges.ts): Subtotal → Packaging → GST.
+  const clientSubtotal = items.reduce((s, i) => s + unitOf(i.id, i.code) * i.qty, 0);
+  const clientQty = items.reduce((s, i) => s + i.qty, 0);
+  const clientPackaging = packagingInr(clientQty);
+  const clientGst = gstOnSubtotal(clientSubtotal);
+  const clientTotal = clientSubtotal + clientPackaging + clientGst;
+  const subtotal = session?.subtotalInr ?? clientSubtotal;
+  const packaging = session?.packagingInr ?? clientPackaging;
+  const gst = session?.gstInr ?? clientGst;
   const total = session?.totalInr ?? clientTotal;
   const advance = session?.advanceInr ?? Math.round(clientTotal * 0.5);
   const delhi = isDelhiZone(data.city || "", data.state || "");
@@ -366,7 +376,9 @@ export function CheckoutView({
                     );
                   })}
                   <div style={{ borderTop: "1px solid rgba(248,245,240,.15)", paddingTop: 12, marginTop: 12 }}>
-                    <div className="co-sum-line"><span>Subtotal (incl. duty + GST)</span><span>{fmt(total + (session?.discountInr ?? 0))}</span></div>
+                    <div className="co-sum-line"><span>Subtotal</span><span>{fmt(subtotal)}</span></div>
+                    <div className="co-sum-line"><span>Packaging Charges</span><span>{fmt(packaging)}</span></div>
+                    <div className="co-sum-line"><span>GST (18%)</span><span>{fmt(gst)}</span></div>
                     {session?.discountInr ? (
                       <div className="co-sum-line" style={{ color: "#7bd88f" }}>
                         <span>Coupon {appliedCoupon ? `(${appliedCoupon})` : ""}</span>
@@ -374,7 +386,7 @@ export function CheckoutView({
                       </div>
                     ) : null}
                     <div className="co-sum-line" style={{ color: "rgba(212,185,120,.8)" }}><span>✓ Delhi delivery included</span></div>
-                    <div className="co-sum-total"><span>Total</span><span>{fmt(total)}</span></div>
+                    <div className="co-sum-total"><span>Grand Total</span><span>{fmt(total)}</span></div>
                     <div className="co-sum-line" style={{ color: "rgba(212,185,120,.9)", marginTop: 6 }}><span>{payFull ? "Paying now (full)" : "50% advance to confirm"}</span><span>{fmt(advance)}</span></div>
                     {!payFull && <div className="co-sum-line" style={{ fontSize: 11, opacity: 0.7 }}><span>Balance before dispatch</span><span>{fmt(total - advance)}</span></div>}
 
@@ -406,7 +418,7 @@ export function CheckoutView({
                   </div>
                 </div>
                 <div className="co-trust">
-                  ✓ All prices ex-Delhi · Import duty &amp; GST included
+                  ✓ All prices ex-Delhi · GST &amp; packaging shown separately
                   <br />✓ Transport outside Delhi charged at actual
                   <br />✓ Handcrafted in Ostend, Belgium
                   <br />✓ 10–14 weeks · 50% advance

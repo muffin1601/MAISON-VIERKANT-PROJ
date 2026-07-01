@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { getCurrentUser } from "@/lib/auth/session";
 import { getOrderForUser } from "@/services/account/queries";
 import { fmt } from "@/lib/format";
+import { packagingInr } from "@/services/pricing/charges";
 import { statusMeta } from "@/lib/orderStatus";
 import { OrderTimeline, OrderHistory } from "@/features/account/OrderTimeline";
 import { ReorderButton } from "@/features/account/ReorderButton";
@@ -97,7 +98,11 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ nu
             <span>{fmt(Number(order.subtotalInr))}</span>
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
-            <span style={{ color: "var(--ink4)" }}>GST</span>
+            <span style={{ color: "var(--ink4)" }}>Packaging Charges</span>
+            <span>{fmt(packagingInr(order.items.reduce((n, it) => n + it.qty, 0)))}</span>
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
+            <span style={{ color: "var(--ink4)" }}>GST (18%)</span>
             <span>{fmt(Number(order.gstInr))}</span>
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>

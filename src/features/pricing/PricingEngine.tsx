@@ -361,7 +361,7 @@ export function PricingEngine({
                 <th style={{ textAlign: "right" }}>Landed Cost</th>
                 <th style={{ textAlign: "right" }}>Excl. GST</th>
                 <th style={{ textAlign: "right", background: "rgba(154,122,58,.12)" }}>
-                  Selling (incl. GST)
+                  Storefront Price
                 </th>
               </tr>
             </thead>

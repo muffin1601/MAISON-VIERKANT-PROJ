@@ -29,8 +29,11 @@ export interface QuotePdfData {
   email: string;
   phone: string;
   status: string;
-  subtotal: number;
-  total: number;
+  subtotal: number; // ex-GST, pre-discount
+  discount: number; // discount amount (0 when none)
+  packaging: number; // ₹30,000 × total qty
+  gst: number; // 18% of the discounted subtotal
+  total: number; // subtotal − discount + packaging + gst
   items: QuotePdfItem[];
 }
 
@@ -180,15 +183,23 @@ export function QuotePdf({ q }: { q: QuotePdfData }) {
         {/* Totals */}
         <View style={s.totals}>
           <View style={s.totalRow}>
-            <Text style={s.totalLabel}>Subtotal</Text>
+            <Text style={s.totalLabel}>Subtotal (ex-GST)</Text>
             <Text style={s.totalValue}>{rupee(q.subtotal)}</Text>
           </View>
-          {q.subtotal !== q.total ? (
+          {q.discount > 0 ? (
             <View style={s.totalRow}>
               <Text style={s.totalLabel}>Discount</Text>
-              <Text style={s.totalValue}>- {rupee(q.subtotal - q.total)}</Text>
+              <Text style={s.totalValue}>- {rupee(q.discount)}</Text>
             </View>
           ) : null}
+          <View style={s.totalRow}>
+            <Text style={s.totalLabel}>Packaging Charges</Text>
+            <Text style={s.totalValue}>{rupee(q.packaging)}</Text>
+          </View>
+          <View style={s.totalRow}>
+            <Text style={s.totalLabel}>GST (18%)</Text>
+            <Text style={s.totalValue}>{rupee(q.gst)}</Text>
+          </View>
           <View style={s.grandRow}>
             <Text style={s.grandLabel}>Total (INR)</Text>
             <Text style={s.grandValue}>{rupee(q.total)}</Text>
@@ -198,7 +209,7 @@ export function QuotePdf({ q }: { q: QuotePdfData }) {
         {/* Terms */}
         <View style={s.terms}>
           <Text style={s.termsTitle}>Terms &amp; Conditions</Text>
-          <Text style={s.termLine}>• Prices are inclusive of import duty &amp; GST, ex-Delhi. Transport outside Delhi charged at actual.</Text>
+          <Text style={s.termLine}>• Prices are ex-GST, ex-Delhi. Packaging and GST (18%) are shown separately above; transport outside Delhi charged at actual.</Text>
           <Text style={s.termLine}>• Lead time: 10–14 weeks from confirmed order · 50% advance to commence production.</Text>
           <Text style={s.termLine}>• Each piece is handcrafted in Ostend, Belgium — minor variations in colour &amp; form are inherent.</Text>
           <Text style={s.termLine}>• This quotation is valid for 30 days from the date of issue.</Text>

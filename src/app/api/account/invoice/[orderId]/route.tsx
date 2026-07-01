@@ -4,6 +4,7 @@ import { getCurrentUser } from "@/lib/auth/session";
 import { hasPermission } from "@/lib/auth/rbac";
 import { ensureInvoice } from "@/services/payment/paymentOrders";
 import { InvoicePdf, type InvoicePdfData } from "@/services/orders/InvoicePdf";
+import { packagingInr } from "@/services/pricing/charges";
 import { PaymentStatus, PaymentProvider } from "@/lib/paymentStatus";
 
 export const runtime = "nodejs";
@@ -74,6 +75,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ orderId
       unit: Number(it.unitPriceInr),
     })),
     subtotal: Number(order.subtotalInr),
+    packaging: packagingInr(order.items.reduce((n, it) => n + it.qty, 0)),
     gst: Number(order.gstInr),
     total: Number(order.totalInr),
     amountPaid,

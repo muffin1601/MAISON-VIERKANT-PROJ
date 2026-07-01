@@ -32,6 +32,7 @@ export interface CheckoutSessionData {
   token: string;
   orderNumber: string;
   subtotalInr: number;
+  packagingInr: number;
   gstInr: number;
   shippingInr: number;
   discountInr: number;
