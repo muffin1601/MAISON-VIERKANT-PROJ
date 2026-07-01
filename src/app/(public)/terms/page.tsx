@@ -21,8 +21,9 @@ export default function TermsPage() {
       </p>
       <h2>Pricing &amp; freight</h2>
       <p>
-        Prices are ex-Delhi and inclusive of applicable taxes unless stated. Freight outside the
-        Delhi NCR zone is quoted separately and shared before order confirmation.
+        Prices are ex-Delhi and exclusive of GST. Packaging charges and GST (18%) are added at
+        checkout and shown as separate line items. Freight outside the Delhi NCR zone is quoted
+        separately and shared before order confirmation.
       </p>
       <h2>Governing law</h2>
       <p>These terms are governed by the laws of India, with jurisdiction in New Delhi.</p>
