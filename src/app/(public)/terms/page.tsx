@@ -16,7 +16,7 @@ export default function TermsPage() {
       </p>
       <h2>Made-to-order pieces</h2>
       <p>
-        Most vessels are handcrafted to order with a typical lead time of 10–14 weeks. Orders are
+        Most vessels are handcrafted to order with a typical lead time of 16–20 weeks. Orders are
         confirmed on receipt of a 50% advance; the balance is due before dispatch.
       </p>
       <h2>Pricing &amp; freight</h2>

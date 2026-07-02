@@ -110,7 +110,7 @@ async function dispatch(intent: Intent, message: string, userId: string | null):
       return {
         intent,
         reply:
-          "Every piece is handcrafted in Ostend, Belgium, so production takes 10–14 weeks. Delivery within Delhi is included; transport elsewhere in India is charged at actual. You'll receive a courier and tracking number once your order is dispatched.",
+          "Every piece is handcrafted in Ostend, Belgium, so production takes 16–20 weeks. Delivery within Delhi is included; transport elsewhere in India is charged at actual. You'll receive a courier and tracking number once your order is dispatched.",
         links: [{ label: "Shipping details", href: "/shipping" }],
         suggestions: DEFAULT_CHIPS,
       };

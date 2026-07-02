@@ -144,7 +144,7 @@ export function ProductDetail({
             </h1>
             {/* Availability status */}
             <div className={`pd-avail${soldOut ? " out" : " in"}`}>
-              <span className="pd-avail-dot" aria-hidden /> {soldOut ? "Made to order — currently unavailable" : "Made to order · 10–14 week lead time"}
+              <span className="pd-avail-dot" aria-hidden /> {soldOut ? "Made to order — currently unavailable" : "Made to order · 16–20 week lead time"}
             </div>
             <p className="pd-desc" id="pd-desc">
               {p.desc}
@@ -241,7 +241,7 @@ export function ProductDetail({
                   : `${cm.code} — contact us for pricing`}
             </div>
             <div className="pd-del">
-              Delivery: 10–14 weeks from order · Pan-India logistics included
+              Delivery: 16–20 weeks from order · Pan-India logistics included
               <br />
               Custom finishes, sizes &amp; engobe applications available on request
             </div>
@@ -292,7 +292,7 @@ export function ProductDetail({
                 Each Atelier Vierkant piece is shaped by hand in Ostend, Belgium. No two pieces are
                 exactly alike — the clay body carries the fingerprint of its maker. The Atelier
                 offers 8 fully coloured clay bodies and 22 engobe surface colours. Custom sizes,
-                finishes, and project-specific specifications available. Lead time: 10–14 weeks from
+                finishes, and project-specific specifications available. Lead time: 16–20 weeks from
                 confirmed order.
               </p>
             </div>

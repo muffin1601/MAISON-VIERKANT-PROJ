@@ -421,7 +421,7 @@ export function CheckoutView({
                   ✓ All prices ex-Delhi · GST &amp; packaging shown separately
                   <br />✓ Transport outside Delhi charged at actual
                   <br />✓ Handcrafted in Ostend, Belgium
-                  <br />✓ 10–14 weeks · 50% advance
+                  <br />✓ 16–20 weeks · 50% advance
                 </div>
               </div>
             </div>
@@ -792,7 +792,7 @@ function SuccessScreen({ placed, settings }: { placed: PlacedState; settings: Pa
             <div className="co-sum-line" style={{ color: "rgba(248,245,240,.75)" }}><span>{placed.full ? "Amount paid (full)" : "Amount paid (50% advance)"}</span><span>{fmt(placed.amountPaid ?? placed.advance)}</span></div>
           </div>
           <p style={{ fontSize: 12.5, color: "var(--ink3)", lineHeight: 1.9, textAlign: "center", maxWidth: 500, margin: "0 auto 16px" }}>
-            Thank you, <strong>{placed.name}</strong>. Your advance is received and production begins now (lead time 10–14 weeks). A confirmation &amp; invoice have been emailed to <strong>{placed.email}</strong>.
+            Thank you, <strong>{placed.name}</strong>. Your advance is received and production begins now (lead time 16–20 weeks). A confirmation &amp; invoice have been emailed to <strong>{placed.email}</strong>.
           </p>
           <div style={{ textAlign: "center", marginTop: 8 }}>
             <Link className="btn-primary" href="/account/orders" style={{ padding: "13px 28px", marginRight: 10 }}>View order &amp; invoice →</Link>

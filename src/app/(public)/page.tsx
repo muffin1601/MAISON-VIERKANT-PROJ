@@ -6,20 +6,20 @@ import { AVI } from "../../../prisma/data/catalogue";
 
 export const dynamic = "force-dynamic";
 
-// Curated mosaic tiles — verbatim from prototype renderHomeGallery().
+// Curated mosaic tiles. Balanced to fill a perfect 4×4 square (16 cells) with
+// the 8 leftover tiles (grid: 4 cols · wide=span 2 cols · tall=span 2 rows):
+//   Rows 1-2: [733 wide·tall] [696 tall] [701 tall]
+//   Row 3:    [723 wide]      [702]      [725]
+//   Row 4:    [697 wide]      [735 wide]
 const GALLERY = [
   { i: 733, cls: "wide tall", cap: "Salone del Mobile · Milano 2025" },
-  { i: 696, cls: "", cap: "Terrace installation" },
-  { i: 701, cls: "", cap: "Architectural pairing" },
+  { i: 696, cls: "tall", cap: "Terrace installation" },
+  { i: 701, cls: "tall", cap: "Architectural pairing" },
   { i: 723, cls: "wide", cap: "Hospitality project" },
-  { i: 731, cls: "", cap: "ARON · 2025 Collection" },
-  { i: 734, cls: "", cap: "Sculptural forms" },
-  { i: 702, cls: "tall", cap: "Garden setting" },
+  { i: 702, cls: "", cap: "Garden setting" },
   { i: 725, cls: "", cap: "Interior styling" },
-  { i: 697, cls: "", cap: "Poolside vessels" },
+  { i: 697, cls: "wide", cap: "Poolside vessels" },
   { i: 735, cls: "wide", cap: "IRIS · handcrafted clay" },
-  { i: 726, cls: "", cap: "Entrance composition" },
-  { i: 732, cls: "", cap: "Atelier detail" },
 ];
 
 export default async function HomePage() {

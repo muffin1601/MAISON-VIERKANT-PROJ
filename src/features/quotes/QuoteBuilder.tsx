@@ -119,7 +119,7 @@ export function QuoteBuilder({
       <div>${[cust.addr1, cust.city, cust.state, cust.pin].filter(Boolean).join(", ")}</div>
       <table><thead><tr><th>Item</th><th>Finish</th><th>Qty</th><th>Unit</th><th>Amount</th></tr></thead><tbody>${rows}</tbody></table>
       <div class="tot">Subtotal: ${fmt(subtotal)}${discount > 0 ? `<br>Discount (${discount}%): −${fmt(discAmt)}` : ""}<br>Packaging Charges: ${fmt(packaging)}<br>GST (18%): ${fmt(gst)}<br><strong>Total: ${fmt(total)}</strong></div>
-      <p style="margin-top:20px;font-size:10px;color:#888">Prices are ex-GST; packaging and GST (18%) are shown separately above. Ex-Delhi — transport outside Delhi as actual. Lead time 10–14 weeks.</p>
+      <p style="margin-top:20px;font-size:10px;color:#888">Prices are ex-GST; packaging and GST (18%) are shown separately above. Ex-Delhi — transport outside Delhi as actual. Lead time 16–20 weeks.</p>
       </body></html>`;
     const w = window.open("", "_blank");
     if (w) {

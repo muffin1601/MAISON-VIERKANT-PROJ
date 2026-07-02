@@ -27,7 +27,7 @@ function layout(title: string, bodyHtml: string): string {
           ${bodyHtml}
         </td></tr>
         <tr><td style="padding:18px 32px;background:#faf7f1;border-top:1px solid #eee5d6;color:#8c847a;font-size:11px;line-height:1.7;">
-          Handcrafted in Ostend, Belgium · Lead time 10–14 weeks<br/>
+          Handcrafted in Ostend, Belgium · Lead time 16–20 weeks<br/>
           This is a transactional email from Maison Vierkant India.
         </td></tr>
       </table>
@@ -228,7 +228,7 @@ export function orderCreatedOfflineEmail(opts: {
         bankBlock(bank) +
         p(`<strong>Use your order number ${esc(number)} as the payment reference.</strong> ${esc(bank.instructions || "")}`) +
         (orderUrl ? `<p style="margin:18px 0 0;">${button(orderUrl, "Submit Payment Proof")}</p>` : "") +
-        p("<br/>Once we verify your payment, production begins. Lead time 10–14 weeks. Balance is payable before dispatch from Ostend."),
+        p("<br/>Once we verify your payment, production begins. Lead time 16–20 weeks. Balance is payable before dispatch from Ostend."),
     ),
   };
 }

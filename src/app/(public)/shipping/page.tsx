@@ -23,7 +23,7 @@ export default function ShippingPage() {
       </p>
       <h2>Lead time</h2>
       <p>
-        Made-to-order pieces typically ship 10–14 weeks after order confirmation; you will receive
+        Made-to-order pieces typically ship 16–20 weeks after order confirmation; you will receive
         tracking details on dispatch.
       </p>
     </LegalPage>

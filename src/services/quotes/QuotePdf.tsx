@@ -210,7 +210,7 @@ export function QuotePdf({ q }: { q: QuotePdfData }) {
         <View style={s.terms}>
           <Text style={s.termsTitle}>Terms &amp; Conditions</Text>
           <Text style={s.termLine}>• Prices are ex-GST, ex-Delhi. Packaging and GST (18%) are shown separately above; transport outside Delhi charged at actual.</Text>
-          <Text style={s.termLine}>• Lead time: 10–14 weeks from confirmed order · 50% advance to commence production.</Text>
+          <Text style={s.termLine}>• Lead time: 16–20 weeks from confirmed order · 50% advance to commence production.</Text>
           <Text style={s.termLine}>• Each piece is handcrafted in Ostend, Belgium — minor variations in colour &amp; form are inherent.</Text>
           <Text style={s.termLine}>• This quotation is valid for 30 days from the date of issue.</Text>
         </View>
