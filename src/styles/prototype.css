@@ -481,6 +481,9 @@ html,body{max-width:100%;overflow-x:hidden}
   .add-btn{flex:1 1 auto}
   /* Touch targets */
   .nav-btn,.fb,.fin-btn,.va-btn,.btn-primary,.btn-dark,.btn-ghost,.btn-gold-outline,.mt-sel-btn{min-height:44px}
+  /* Inline anchor buttons: let the background wrap the whole label (incl. the
+     arrow) and center it, so long labels don't spill outside the dark box. */
+  .btn-primary,.btn-dark,.btn-outline-w,.btn-ghost,.btn-gold-outline{display:inline-flex;align-items:center;justify-content:center;gap:6px;text-align:center;max-width:100%;box-sizing:border-box}
   .qty-ctrl button{min-width:44px;min-height:44px}
   .cart-btn{width:40px;height:40px}
   /* Wide tables scroll internally instead of the page */
@@ -499,6 +502,8 @@ html,body{max-width:100%;overflow-x:hidden}
   .sw{padding:40px 16px}
   .header-inner{padding:0 14px}
   .logo-main{font-size:18px}
+  /* Trade cards set a 40px inline padding that crowds buttons on small phones. */
+  .r-grid-2 > div{padding:26px !important}
 }
 
 /* ============================================================================

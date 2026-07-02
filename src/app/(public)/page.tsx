@@ -28,11 +28,20 @@ export default async function HomePage() {
   // Fallback: if none are flagged yet, surface the first active products so the
   // homepage section is never empty.
   const active = products.filter((p) => p.status === "ACTIVE");
-  // Flagged products first, then top up with other active products so the grid
-  // always fills (8 tiles) even before much is flagged in the admin.
+  // Showcase a diverse range: at most one product per series. Flagged products
+  // take priority, then active non-flagged fill any remaining slots — always
+  // skipping series already represented. Original order is preserved within each
+  // tier since filter() is stable. Stops at 8 tiles or when series run out.
   const flagged = active.filter((p) => p.featured);
   const rest = active.filter((p) => !p.featured);
-  const featured = [...flagged, ...rest].slice(0, 8);
+  const usedSeries = new Set<string>();
+  const featured: typeof active = [];
+  for (const p of [...flagged, ...rest]) {
+    if (featured.length >= 8) break;
+    if (usedSeries.has(p.series)) continue;
+    usedSeries.add(p.series);
+    featured.push(p);
+  }
 
   return (
     <div id="page-home" className="page active">
