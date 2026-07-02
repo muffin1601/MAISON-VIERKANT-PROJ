@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
 import { Cormorant_Garamond, Jost } from "next/font/google";
 import { Providers } from "./providers";
-// @ts-ignore: CSS module typings are not available in this environment.
 import "../styles/prototype.css";
-// @ts-ignore: SCSS module typings are not available in this environment.
 import "./globals.scss";
 
 // Self-hosted via next/font — eliminates the render-blocking Google <link> and
